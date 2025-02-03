@@ -1,0 +1,25 @@
+.content {
+    display: flex;
+    min-height: 90vh;
+    padding-top: 100px;
+    width: 1360px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.datepacker{
+    width: 400px;
+    height: 30px;
+}
+.rangeMenu {
+    width: 200px;
+    height: 30px;
+}
+.solutionMenu {
+    width: 200px;
+    height: 30px;
+}
+.submit {
+    width: 100px;
+    height: 30px;
+    background-color: lightblue;
+}

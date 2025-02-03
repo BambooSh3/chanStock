@@ -1,0 +1,14 @@
+# 忽略 node_modules 目录
+node_modules
+
+# 忽略日志文件
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 忽略环境变量文件
+.env
+
+# 忽略打包后的构建文件（根据项目配置可能有所不同）
+build
+dist

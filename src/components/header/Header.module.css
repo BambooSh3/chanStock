@@ -1,0 +1,28 @@
+.content {
+    display: flex;
+    background-color: antiquewhite;
+    width: 100%;
+    height: 40px;
+    text-align: center;
+    align-items: center;
+    padding: 20px;
+}
+.title {
+    width: 200px;
+    font-size: 30px;
+    font-family: 'Slidefu';
+    margin-right: 200px;
+}
+.navbtn {
+    width: 200px;
+    height: 40px;
+    font-size: 28;
+    border-radius: 0%;
+}
+.navbtnSelect {
+    width: 200px;
+    height: 40px;
+    font-size: 28;
+    border-bottom: 3px rgb(0, 157, 255) solid;
+    border-radius: 0%;
+}
