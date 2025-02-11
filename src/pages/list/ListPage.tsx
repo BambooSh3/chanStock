@@ -60,6 +60,7 @@ export const ListPage: React.FC = () => {
             Papa.parse(csvData, {
                 header: true,
                 complete: function(result) {
+                    console.log(result)
                     const fileData = result.data.map((element, index)=>({
                         key: index + 1,
                         name: element.name,

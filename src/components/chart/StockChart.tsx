@@ -170,7 +170,7 @@ export function parseBuySellPointLabel(data: BuySellItem[]) {
     let labels: any[] = []
     for (let i=0;i<data.length;i++) {
         let date = moment(data[i]["date"]).toDate();
-        let color = data[i]["type"] === "buy" ? "#FF0000" : "#00FF00"
+        let color = data[i]["type"] === "buy" ? "#FF0000" : "#006400"
         let label = {
             point: {
                 x: dateToUTCNumber(date),
@@ -415,7 +415,7 @@ export const StockChart: React.FC<Props> = (props) => {
     const ma250Value = props.maData250.length > 0 ? props.maData250[props.maData250.length-1].close : "0";
     const curValue = props.data.length > 0 ? props.data[props.data.length-1].close : "0";
     const curRange = props.data.length > 0 ? props.data[props.data.length-1].range + '%' : "0%";
-    const rangeColor = curRange[0] === '-' ? "#00FF00" : "#FF0000"
+    const rangeColor = curRange[0] === '-' ? "#006400" : "#FF0000"
     const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs(startTime), dayjs(endTime)]);
     const [chartHeight, setChartHeight] = useState<string>('750px')
     

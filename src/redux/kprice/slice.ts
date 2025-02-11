@@ -15,6 +15,20 @@ export interface KItem {
     range: number; //涨跌幅度
     index: number;
 }
+//资金净流入数据
+export interface CapitalItem {
+    today: number;
+    threeDay: number;
+    fiveDay: number;
+    todayStr: string;
+    threeDayStr: string;
+    fiveDayStr: string;
+}
+export interface DayPriceItem {
+    price: number;
+    rate: string;
+    color: string;
+}
 
 // 通过k线生成MA线
 export interface MAItem {
@@ -644,6 +658,56 @@ export function genCenterList(pointList: ChanPointItem[]) {
     return centerList;
 }
 
+function numberToCapitalString(num: number): string {
+    const billion = 100000000;
+    const tenThousand = 10000;
+    if (Math.abs(num) >= billion) {
+        // 如果数值大于等于 1 亿，以亿为单位
+        const result = (num / billion).toFixed(2);
+        return `${result} 亿`;
+    } else if (Math.abs(num) >= tenThousand) {
+        // 如果数值大于等于 1 万，以万为单位
+        const result = (num / tenThousand).toFixed(2);
+        return `${result} 万`;
+    } else {
+        // 数值小于 1 万，直接显示
+        return num.toString();
+    }
+}
+
+export function parseCapital(datas: any[]) : CapitalItem {
+    let day: number = 0;
+    let threeDay: number = 0;
+    let fiveDay: number = 0;
+    var len = datas.length;
+    if (len > 0) {
+        day = datas[len-1]["主力净流入-净额"]
+    }
+    if (len >= 3) {
+        threeDay = datas[len-1]["主力净流入-净额"] + datas[len-2]["主力净流入-净额"] + datas[len-3]["主力净流入-净额"] 
+    }
+    if (len >= 5) {
+        fiveDay = datas[len-1]["主力净流入-净额"] + datas[len-2]["主力净流入-净额"] + datas[len-3]["主力净流入-净额"] + datas[len-4]["主力净流入-净额"] + datas[len-5]["主力净流入-净额"]
+    }
+    return {today: day, threeDay: threeDay, fiveDay: fiveDay, 
+        todayStr: numberToCapitalString(day),
+         threeDayStr: numberToCapitalString(threeDay), 
+         fiveDayStr: numberToCapitalString(fiveDay)}
+}
+
+export function parseDailyPrice(datas: any[]) {
+    let result: DayPriceItem = {price: 0, rate: '0%', color: '#FF0000'}
+    let priceList = parseDailyData(datas)
+    if (priceList.length > 0) {
+        let lastItem = priceList[priceList.length - 1]
+        let close = lastItem.close
+        let rate = lastItem.range
+        let colorStr = rate > 0 ? "#FF0000" : "#006400"
+        result = {price: close, rate: `${rate}%`, color: colorStr} 
+    }
+    return result
+}
+
 export function parseDailyData(datas: any[]) {
     // console.log("haojin test len:", datas.length)
     let priceList: KItem[] = []
@@ -690,10 +754,38 @@ export function parseMinData(datas: any[], code: string) {
 }
 
 export const codeMap = ["000688","512660"]
-export const hkCodeMap = ["01810",'09888','00700','00981']
+export const hkCodeMap = ["01810",'09888','00700','00981','09660']
 
+export function dailyPriceUrl(code: string): string {
+    let url = genKPriceUrl('day', 'stock')
+    if (codeMap.includes(code)){
+        url = genKPriceUrl('day', 'etf')
+    } else if (hkCodeMap.includes(code)) {
+        url = genKPriceUrl('day','hk')
+    } 
+    var date = getCurrentDateInFormat()
+    url = url + `?symbol=${code}&period=daily&start_date=${date}&end_date=${date}`;
+    return url;
+}
 
 // http://127.0.0.1:8080/api/public/stock_zh_a_hist?symbol=601021&period=daily&start_date=20240920&end_date=20240930&adjust=hfq
+
+export function getCurrentDateInFormat(): string {
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    // 获取月份，需要加 1，因为月份是从 0 开始计数的
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0'); 
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    return `${year}${month}${day}`;
+}
+
+export function capitalInfoUrl(code: string): string {
+    let market = "sh"
+    if (code[0] == '0' || code[0] == '3') {
+        market = 'sz'
+    }
+    return `http://127.0.0.1:8080/api/public/stock_individual_fund_flow?stock=${code}&market=${market}`
+}
 
 export function genKPriceUrl(period: "day" | "min", type: "stock" | "etf" | "hk"): string {
     if (navigator.userAgent.indexOf('Windows') > -1) {

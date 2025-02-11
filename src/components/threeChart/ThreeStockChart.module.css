@@ -31,6 +31,9 @@
     align-self: center;
     margin-right: 12px;
 }
+.money {
+    margin-right: 12px;
+}
 
 .searchInput {
     width: 120px;

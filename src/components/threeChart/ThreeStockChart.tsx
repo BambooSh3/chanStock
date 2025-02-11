@@ -14,7 +14,7 @@ import { useSelector } from "../../redux/hooks";
 import { useDispatch } from "react-redux";
 import dayjs, { Dayjs } from "dayjs"
 import { strictEqual } from "assert"
-import { BuySellItem, ChanCenterItem, ChanPointItem, codeMap, genBiPointList, genBuySellPoint, genCenterList, genKPriceUrl, genMACDData, genMAData, hkCodeMap, KItem, MAItem, parseDailyData, parseMinData } from "../../redux/kprice/slice"
+import { BuySellItem, capitalInfoUrl, CapitalItem, ChanCenterItem, ChanPointItem, codeMap, dailyPriceUrl, DayPriceItem, genBiPointList, genBuySellPoint, genCenterList, genKPriceUrl, genMACDData, genMAData, hkCodeMap, KItem, MAItem, parseCapital, parseDailyData, parseDailyPrice, parseMinData } from "../../redux/kprice/slice"
 import axios from "axios"
 import { debounce } from 'lodash'
 import HighchartsMore from 'highcharts/highcharts-more';
@@ -98,27 +98,24 @@ export const ThreeStockChart: React.FC = () => {
     const [middleMa20Value, setMiddleMa20Value] = useState<number>(0)
     const [middleMa90Value, setMiddleMa90Value] = useState<number>(0) 
     const [middleMa250Value, setMiddleMa250Value] = useState<number>(0) 
-    const [middleCurValue, setMiddleCurValue] = useState<number>(0)
-    const [middleCurRange, setMiddleCurRange] = useState<string>("")
-    const [middleRangeColor, setMiddleRangeColor] = useState<string>("#FF0000") 
 
     const [leftMa5Value, setLeftMa5Value] = useState<number>(0)
     const [leftMa10Value, setLeftMa10Value] = useState<number>(0)
     const [leftMa20Value, setLeftMa20Value] = useState<number>(0)
     const [leftMa90Value, setLeftMa90Value] = useState<number>(0) 
     const [leftMa250Value, setLeftMa250Value] = useState<number>(0)  
-    const [leftCurValue, setLeftCurValue] = useState<number>(0)
-    const [leftCurRange, setLeftCurRange] = useState<string>("")
-    const [leftRangeColor, setLeftRangeColor] = useState<string>("#FF0000") 
 
     const [rightMa5Value, setRightMa5Value] = useState<number>(0)
     const [rightMa10Value, setRightMa10Value] = useState<number>(0)
     const [rightMa20Value, setRightMa20Value] = useState<number>(0)
     const [rightMa90Value, setRightMa90Value] = useState<number>(0) 
     const [rightMa250Value, setRightMa250Value] = useState<number>(0) 
-    const [rightCurValue, setRightCurValue] = useState<number>(0)
-    const [rightCurRange, setRightCurRange] = useState<string>("")
-    const [rightRangeColor, setRightRangeColor] = useState<string>("#FF0000") 
+
+    const [price, setPrice] = useState<number>(0)
+    const [priceRate, setPriceRate] = useState<number>(0)
+    const [capital, setCapital] = useState<CapitalItem>({today: 0, threeDay: 0, fiveDay: 0, todayStr: '-', threeDayStr: '-', fiveDayStr: '-'})
+    const [capitalColor, setCapitalColor] = useState<[string, string, string]>(['#FF0000','#FF0000','FF0000'])
+    const [dayPrice, setDayPrice] = useState<DayPriceItem>({price: 0, rate: '0%', color: '#FF0000'})
 
 
     useEffect(() => {
@@ -133,6 +130,8 @@ export const ThreeStockChart: React.FC = () => {
         fetchKPrice(code, "left")
         fetchKPrice(code, "middle")
         fetchKPrice(code, "right")
+        fetchBaseInfo(code)
+        fetchDailyInfo(code)
     }
     const fetchAllWithDebounce = debounce(fetchAllData, 200)
     useEffect(() => {
@@ -169,6 +168,27 @@ export const ThreeStockChart: React.FC = () => {
     useEffect(() => {
         fetchRightWithDebounce()
     }, [rightStartTime, rightEndTime, rightPeriod, rightMacdValue]); 
+
+    async function fetchBaseInfo(code:string) {
+        if (capital.todayStr === '-') {
+            let url = capitalInfoUrl(code)
+            const { data } = await axios.get(url); 
+            let capitalItem = parseCapital(data) 
+            setCapital(capitalItem)
+            var todayColor = capitalItem.today > 0 ? "#FF0000" : '#006400';
+            var threeDayColor = capitalItem.threeDay > 0 ? "#FF0000" : '#006400';
+            var fiveDayColor = capitalItem.fiveDay > 0 ? "#FF0000" : '#006400';
+            setCapitalColor([todayColor, threeDayColor, fiveDayColor])
+        } 
+    }
+
+    async function fetchDailyInfo(code:string) {
+       let url = dailyPriceUrl(code) 
+       const { data } = await axios.get(url); 
+       let priceItem = parseDailyPrice(data)
+       setDayPrice(priceItem)
+
+    }
 
     async function fetchKPrice(code:string, mode: "left" | "right" | "middle") {
         let url = ""
@@ -239,32 +259,12 @@ export const ThreeStockChart: React.FC = () => {
             if (ma20.length > 0) setLeftMa20Value(ma20[ma20.length - 1].close);
             if (ma90.length > 0) setLeftMa90Value(ma90[ma90.length - 1].close);
             if (ma250.length > 0) setLeftMa250Value(ma250[ma250.length - 1].close);
-            if (priceList.length > 0) {
-                setLeftCurValue(priceList[priceList.length - 1].close) 
-                if (priceList[priceList.length - 1].range) {
-                    setLeftCurRange(priceList[priceList.length - 1].range + '%')
-                } else {
-                    setLeftCurRange('')
-                }
-                const color = priceList[priceList.length - 1].range > 0 ? "#FF0000" : "#00FF00"
-                setLeftRangeColor(color)
-            }
         } else if (mode == 'middle') {
             if (ma5.length > 0) setMiddleMa5Value(ma5[ma5.length - 1].close);
             if (ma10.length > 0) setMiddleMa10Value(ma10[ma10.length - 1].close);
             if (ma20.length > 0) setMiddleMa20Value(ma20[ma20.length - 1].close);
             if (ma90.length > 0) setMiddleMa90Value(ma90[ma90.length - 1].close);
             if (ma250.length > 0) setMiddleMa250Value(ma250[ma250.length - 1].close);
-            if (priceList.length > 0) {
-                setMiddleCurValue(priceList[priceList.length - 1].close) 
-                if (priceList[priceList.length - 1].range) {
-                    setMiddleCurRange(priceList[priceList.length - 1].range + '%')
-                } else {
-                    setMiddleCurRange('')
-                }
-                const color = priceList[priceList.length - 1].range > 0 ? "#FF0000" : "#00FF00"
-                setMiddleRangeColor(color)
-            } 
             macdValue = middleMacdValue
         } else if (mode == 'right') {
             if (ma5.length > 0) setRightMa5Value(ma5[ma5.length - 1].close);
@@ -272,16 +272,6 @@ export const ThreeStockChart: React.FC = () => {
             if (ma20.length > 0) setRightMa20Value(ma20[ma20.length - 1].close);
             if (ma90.length > 0) setRightMa90Value(ma90[ma90.length - 1].close);
             if (ma250.length > 0) setRightMa250Value(ma250[ma250.length - 1].close);
-            if (priceList.length > 0) {
-                setRightCurValue(priceList[priceList.length - 1].close) 
-                if (priceList[priceList.length - 1].range) {
-                    setRightCurRange(priceList[priceList.length - 1].range + '%')
-                } else {
-                    setRightCurRange('')
-                }
-                const color = priceList[priceList.length - 1].range > 0 ? "#FF0000" : "#00FF00"
-                setRightRangeColor(color)
-            } 
             macdValue = rightMacdValue
         }
         const macd_dif = macd_dic.dif
@@ -764,6 +754,13 @@ export const ThreeStockChart: React.FC = () => {
             <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button>
             <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>
         </div> 
+        <div>
+            <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
+            <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>涨幅 {dayPrice.rate}</Typography.Text>
+            <Typography.Text style={{marginLeft: 12, color: capitalColor[0]}}>日净流入：{capital.todayStr}</Typography.Text>
+            <Typography.Text style={{marginLeft: 12, color: capitalColor[1]}}>3日净流入：{capital.threeDayStr}</Typography.Text>
+            <Typography.Text style={{marginLeft: 12, color: capitalColor[2]}}>5日净流入：{capital.fiveDayStr}</Typography.Text>
+        </div>
         <Row className={styles.row}>
             <Col span={8} className={styles.col}>
                 <div className={styles.searchContent}>
@@ -782,8 +779,6 @@ export const ThreeStockChart: React.FC = () => {
                     <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {leftMa20Value}</Typography.Text>
                     <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {leftMa90Value}</Typography.Text>
                     <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {leftMa250Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: "#FF0000"}}>现价 {leftCurValue}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: leftRangeColor}}>涨幅 {leftCurRange}</Typography.Text> 
                 </div>
                 <HighchartsReact
                     highcharts={Highcharts}
@@ -810,8 +805,6 @@ export const ThreeStockChart: React.FC = () => {
                     <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {middleMa20Value}</Typography.Text>
                     <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {middleMa90Value}</Typography.Text>
                     <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {middleMa250Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: "#FF0000"}}>现价 {middleCurValue}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: middleRangeColor}}>涨幅 {middleCurRange}</Typography.Text> 
                 </div>
                 <HighchartsReact
                     highcharts={Highcharts}
@@ -836,8 +829,6 @@ export const ThreeStockChart: React.FC = () => {
                     <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {rightMa20Value}</Typography.Text>
                     <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {rightMa90Value}</Typography.Text>
                     <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {rightMa250Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: "#FF0000"}}>现价 {rightCurValue}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: rightRangeColor}}>涨幅 {rightCurRange}</Typography.Text> 
                 </div>
                 <HighchartsReact
                     highcharts={Highcharts}
