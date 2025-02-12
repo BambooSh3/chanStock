@@ -7,14 +7,14 @@ import Highcharts, { dateFormat, numberFormat, setOptions } from 'highcharts/hig
 import Typography from "antd/es/typography"
 import React, { useEffect, useRef, useState } from "react"
 import { findRangeName, genPeriodUrlKey, getCurrentDateFormatted,
-     getPeriodName, parseBuySellPointLabel, parseChanBi, parseChanBiLabel, parseChanCenter,
+     getPeriodName, parseBuySellPointLabel, parseBuySellPointLabelV2, parseChanBi, parseChanBiLabel, parseChanCenter,
       parseData, parseMACD, parseMaData, parseMarkLine, parseVolData, periodList, rangeList } from "../chart/StockChart"
 import styles from "./ThreeStockChart.module.css"
 import { useSelector } from "../../redux/hooks";
 import { useDispatch } from "react-redux";
 import dayjs, { Dayjs } from "dayjs"
 import { strictEqual } from "assert"
-import { BuySellItem, capitalInfoUrl, CapitalItem, ChanCenterItem, ChanPointItem, codeMap, dailyPriceUrl, DayPriceItem, genBiPointList, genBuySellPoint, genCenterList, genKPriceUrl, genMACDData, genMAData, hkCodeMap, KItem, MAItem, parseCapital, parseDailyData, parseDailyPrice, parseMinData } from "../../redux/kprice/slice"
+import { BuySellItem, capitalInfoUrl, CapitalItem, ChanCenterItem, ChanPointItem, codeMap, dailyPriceUrl, DayPriceItem, genBiPointList, genBuySellPoint, genBuySellPointV2, genCenterList, genKPriceUrl, genMACDData, genMAData, hkCodeMap, KItem, MAItem, parseCapital, parseDailyData, parseDailyPrice, parseMinData } from "../../redux/kprice/slice"
 import axios from "axios"
 import { debounce } from 'lodash'
 import HighchartsMore from 'highcharts/highcharts-more';
@@ -32,10 +32,6 @@ export const ThreeStockChart: React.FC = () => {
     const [biEnable,setBiEnable] = useState<boolean>(true) 
     const [centerEnable,setCenterEnable] = useState<boolean>(true)
     const [buySellEnable, setBuySellEnable] = useState<boolean>(true)
-    // const [leftBuySellPointList, setLeftBuySellPointList] = useState<BuySellItem[]>([])
-    // const [middleBuySellPointList, setMiddleBuySellPointList] = useState<BuySellItem[]>([])
-    // const [rightBuySellPointList, setRightBuySellPointList] = useState<BuySellItem[]>([])
-    const [buySellPointList, setRightBuySellPointList] = useState<BuySellItem[]>([])
     const [labelEnable, setLabelEnable] = useState<boolean>(false)
     const [markEnable, setMarkEnable] = useState<boolean>(false)
     const [macdEnable,setMacdEnable] = useState<boolean>(false)
@@ -233,6 +229,7 @@ export const ThreeStockChart: React.FC = () => {
         url = url + `?symbol=${code}&period=${period}&start_date=${start}&end_date=${end}`;
         console.log(url)
         const analyse_buy_sell = buySellEnable && period === '1' 
+        const test_enable = buySellEnable && period === '30'
         const { data } = await axios.get(url);
         let priceList:KItem[] = []
         if (period == 'daily' || period == 'weekly') {
@@ -252,7 +249,6 @@ export const ThreeStockChart: React.FC = () => {
         const ma_90 = macdEnable ?  ma90 : []; 
         const ma_250 = macdEnable ?  ma250: [];
         let macdValue = leftMacdValue
-        let lastBuySellItem: null|BuySellItem = buySellPointList.length <= 0 ? null : buySellPointList[buySellPointList.length-1] 
         if (mode == "left") {
             if (ma5.length > 0) setLeftMa5Value(ma5[ma5.length - 1].close);
             if (ma10.length > 0) setLeftMa10Value(ma10[ma10.length - 1].close);
@@ -279,15 +275,7 @@ export const ThreeStockChart: React.FC = () => {
         const macd = macd_dic.macd
         const bi = biEnable ? genBiPointList(priceList) : [];
         const center = centerEnable ? genCenterList(bi) : [];
-        const buySellItems = analyse_buy_sell ? genBuySellPoint(bi,center, 
-            priceList[priceList.length-1],
-            macd_dif,
-            macd_dea,
-            macd,
-             lastBuySellItem,period): [];
-        if (buySellItems.length > 0) {
-            buySellPointList.push(buySellItems[buySellItems.length - 1])
-        }
+        const buySellItems = buySellEnable ? genBuySellPointV2(bi, center, priceList, macd_dif, macd_dea, macd) : [];
         const type = (period == 'weekly' || period == 'daily') ? 'daily' : "min"
         const trueData = parseData(priceList, type);
         const maData5 = macdEnable ? parseMaData(ma_5) : [];
@@ -301,7 +289,7 @@ export const ThreeStockChart: React.FC = () => {
         const centerShapes =centerEnable ? parseChanCenter(center) : [];
         const markValues = parseMarkLine(markEnable);
         let labels =labelEnable ? parseChanBiLabel(bi) : [];
-        const buyselllabels = analyse_buy_sell ? parseBuySellPointLabel(buySellPointList):[];
+        const buyselllabels = buySellItems.length>0 ? parseBuySellPointLabelV2(buySellItems):[];
         labels = labels.concat(buyselllabels)
         let periodtitle = period
         if (period == 'weekly') {

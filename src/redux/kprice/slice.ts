@@ -3,6 +3,7 @@ import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { data } from "@remix-run/router/dist/utils";
 import { dateFormat, merge } from "highcharts";
 import { idText, nodeModuleNameResolver } from "typescript";
+import { kill } from "process";
 
 export interface KItem {
     open: number;
@@ -14,6 +15,12 @@ export interface KItem {
     vol: number; //成交量
     range: number; //涨跌幅度
     index: number;
+}
+export interface BuySellV2 {
+    type: 'buy' | 'sell';
+    date: string;
+    index: number;
+    price: number;
 }
 //资金净流入数据
 export interface CapitalItem {
@@ -293,13 +300,13 @@ export function genBiPointList(datas: KItem[]) {
         if (datas[datas.length - 1].close >= resList[resList.length - 1].point) {
             resList[resList.length - 1] = { code: node.code, date: node.date, point: node.close, type: "top", index: node.index }
         } else {
-            resList.push({ code: node.code, date: node.date, point: node.close, type: "bottom", index: node.index })
+            //resList.push({ code: node.code, date: node.date, point: node.close, type: "bottom", index: node.index })
         }
     } else {
         if (node.close < resList[resList.length - 1].point) {
             resList[resList.length - 1] = { code: node.code, date: node.date, point: node.close, type: "bottom", index: node.index }
         } else {
-            resList.push({ code: node.code, date: node.date, point: node.close, type: "top", index: node.index })
+            //resList.push({ code: node.code, date: node.date, point: node.close, type: "top", index: node.index })
         }
     }
     return resList;
@@ -324,20 +331,140 @@ function findMACDArea(macd:MAItem[], index: number): null | number {
     return sum
 }
 
+export function findNearCenter(center: ChanCenterItem[], curIndex: number): ChanCenterItem|null {
+    let curCenter:ChanCenterItem|null = null;
+    for(let i=0;i<center.length;i++) {
+        let temCenter = center[i];
+        if(curIndex < temCenter.leftIndex) {
+            break;
+        } else if (curIndex >= temCenter.leftIndex && curIndex <= temCenter.rightIndex) {
+            curCenter = temCenter;
+            break;
+        } else {
+            curCenter = temCenter;
+        }
+    }
+    return curCenter; 
+}
+//找到左边最近的相同type的point
+function findNearPoint(bi: ChanPointItem[], index: number, type: 'bottom'|'top'): ChanPointItem|null {
+    while(index>=0 && index<bi.length) {
+        if(bi[index].type == type) {
+            return bi[index];
+        } else {
+            index = index - 1;
+        }
+    }
+    return null;
+}
+
+//判断价格是否在中枢的上沿或者下沿
+function priceAroundCenter(center: ChanCenterItem, price: number): boolean {
+    let res = false;
+    let total = center.top - center.bottom
+    let threshold = total * 1/4;
+    if(Math.abs(price - center.bottom) <= threshold || Math.abs(price-center.top) <= threshold) {
+        res = true;
+    }
+    return res; 
+}
+//比较两个bottom点，后一个是否发生背驰 // todo
+function bottomTurningPoint(prePointIndex: number, pointIndex: number, dif: MAItem[]): boolean {
+    let res = false;
+    if(dif[pointIndex].close > dif[prePointIndex].close) {
+        res = true
+    }
+    return res;
+}
+//比较两个top点，后一个是否发生背驰 // todo
+function topTurningPoint(prePointIndex: number, pointIndex: number, dif: MAItem[]): boolean {
+    let res = false;
+    if(dif[pointIndex].close < dif[prePointIndex].close) {
+        res = true
+    }
+    return res;
+}
+
+export function genBuySellPointV2(
+    bi: ChanPointItem[], 
+    center: ChanCenterItem[], 
+    kItems: KItem[], 
+    dif:MAItem[], 
+    dea:MAItem[], 
+    macd: MAItem[]): BuySellV2[] {
+        let result: BuySellV2[] = []
+        if(center.length <= 0 || bi.length < 4 || kItems.length <= 0) {
+            return result;
+        }
+        for(let i=0;i<bi.length;i++) {
+            let point = bi[i];
+            let nearCenter = findNearCenter(center, point.index);
+            if (nearCenter == null) {
+                continue;
+            }
+            if (priceAroundCenter(nearCenter, point.point)) {
+                //再判断是否背驰
+                let prePoint = findNearPoint(bi, i-1, point.type)
+                if(prePoint == null) { continue }
+                if (point.type == 'bottom') {
+                    if(bottomTurningPoint(prePoint.index, point.index, dif)) {
+                        //买点
+                        let buyPoint:BuySellV2 = {type: 'buy', date: point.date, index: point.index, price: point.point}
+                        result.push(buyPoint);
+                    }
+                } else {
+                    if(topTurningPoint(prePoint.index, point.index, dif)) {
+                        //卖点
+                        let buyPoint:BuySellV2 = {type: 'sell', date: point.date, index: point.index, price: point.point}
+                        result.push(buyPoint);
+                    } 
+                }
+            }  
+        }
+        const lastPoint = bi[bi.length-1];
+        const lastKItem = kItems[kItems.length - 1]
+        const lastCenter = center[center.length - 1]
+        if(lastKItem.index - lastPoint.index <= 3) {
+            //当前k线间隔太近的先不处理
+        } else {
+            //判断当前k线是否满足买卖点条件
+            if(priceAroundCenter(lastCenter, lastKItem.close)) {
+                if(lastPoint.type == 'top' && lastKItem.close < lastPoint.point) {
+                    //当作bottom处理
+                    let prePoint = findNearPoint(bi, bi.length-1-1, 'bottom')
+                    if(prePoint!=null && bottomTurningPoint(prePoint.index, lastKItem.index, dif)) {
+                        //买点
+                        let buyPoint:BuySellV2 = {type: 'buy', date: lastKItem.date, index: lastKItem.index, price: lastKItem.close}
+                        result.push(buyPoint); 
+                    }
+                } else if (lastPoint.type == 'bottom' && lastKItem.close > lastPoint.point) {
+                    //当作top处理
+                    let prePoint = findNearPoint(bi, bi.length-1-1,'top')
+                    if (prePoint != null && topTurningPoint(prePoint.index, lastKItem.index, dif)) {
+                        let buyPoint:BuySellV2 = {type: 'sell', date: lastKItem.date, index: lastKItem.index, price: lastKItem.close}
+                        result.push(buyPoint);  
+                    }
+                }
+            }
+        }
+        return result;
+    } 
+
 //当前只支持一个买卖点判断，只判断当前位置，如果不符合就返回空数组
 //先按macd的diff和dea来判断吧，忽略bi先
 export function genBuySellPoint(
     bi: ChanPointItem[], 
     center: ChanCenterItem[], 
-    curKItem: KItem, 
+    kItems: KItem[], 
     dif:MAItem[], 
     dea:MAItem[], 
     macd: MAItem[],
     lastBuySellPoint: BuySellItem|null, 
     period: string): BuySellItem[] {
-    if(center.length <= 0 || bi.length < 4) {
+    if(center.length <= 0 || bi.length < 4 || kItems.length <= 0) {
         return []
     }
+    let curKItem = kItems[kItems.length - 1]
     const lastCenter = center[center.length - 1]
     const lastdif = dif[dif.length-1]
     const lastdea = dea[dea.length-1]

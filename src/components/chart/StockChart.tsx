@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import HighchartsReact from "highcharts-react-official";
 import Highcharts, { dateFormat, numberFormat } from 'highcharts/highstock';
 import styles from "./StockChart.module.css"
-import { BuySellItem, ChanCenterItem, ChanPointItem, KItem, MAItem } from "../../redux/kprice/slice";
+import { BuySellItem, BuySellV2, ChanCenterItem, ChanPointItem, KItem, MAItem } from "../../redux/kprice/slice";
 import moment from "moment";
 import { Input, Typography, Button, Dropdown, MenuProps, DatePicker, InputNumber } from "antd";
 import { useSelector } from "../../redux/hooks";
@@ -165,6 +165,31 @@ export function parseChanBi(data: ChanPointItem[]) {
     }
     // console.log("bi: ", chartBi.length)
     return chartBi;
+}
+export function parseBuySellPointLabelV2(data: BuySellV2[]) {
+    let labels: any[] = []
+    for (let i=0;i<data.length;i++) {
+        let date = moment(data[i]["date"]).toDate();
+        let color = data[i]["type"] === "buy" ? "#FF0000" : "#006400"
+        let label = {
+            point: {
+                x: dateToUTCNumber(date),
+                y: data[i]["price"],
+                xAxis: 0,
+                yAxis: 0
+            },
+            text: data[i]["type"],
+            backgroundColor: '#FFFFFF',
+            borderColor: color,
+            borderWidth: 1,
+            style: {
+                fontSize: '12px',
+                fontColor: color
+            }
+        }
+        labels.push(label)
+    }
+    return labels 
 }
 export function parseBuySellPointLabel(data: BuySellItem[]) {
     let labels: any[] = []
