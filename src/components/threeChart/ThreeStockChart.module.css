@@ -43,6 +43,10 @@
     margin-left: 12px;
     margin-right: 34px;
 }
+.testMenu {
+    width: 100px;
+    margin-left: auto;
+}
 .col{
     border-right: 2px solid lightcoral;
     height: 100%;

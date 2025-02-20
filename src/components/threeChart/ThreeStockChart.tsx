@@ -80,6 +80,7 @@ export const ThreeStockChart: React.FC = () => {
     const [middlePeriod, setMiddlePeriod] = useState<string>("5")
     const [rightPeriod, setRightPeriod] = useState<string>("1")
     const [leftPeriodName, setLeftPeriodName] = useState<string>("30分钟线")
+    const [testPeriodName, setTestPeriosName] = useState<string>('5Min')
     const [middlePeriodName, setMiddlePeriodName] = useState<string>("5分钟线")
     const [rightPeriodName, setRightPeriodName] = useState<string>("1分钟线")
     const dispatch = useDispatch();
@@ -514,6 +515,10 @@ export const ThreeStockChart: React.FC = () => {
         items: menuItems,
         onClick: handleLeftMenuClick,
     };
+    const testMenuProps = {
+        items: [{label: '间隔1分钟', key: '1Min'},{label: '间隔5分钟', key: '5Min'},{label: '间隔30分钟', key:'30Min'}],
+        onClick: handleTestMenuClick,
+    };
     const middleMenuProps = {
         items: menuItems,
         onClick: handleMiddleMenuClick,
@@ -593,6 +598,7 @@ export const ThreeStockChart: React.FC = () => {
             stopUpdating();
         }
     };
+    
     const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
     const startUpdating = () => {
         stopUpdating();
@@ -654,6 +660,16 @@ export const ThreeStockChart: React.FC = () => {
         setLeftPeriod(genPeriodUrlKey(e.key))
         const name = getPeriodName(e.key)
         setLeftPeriodName(name)
+    };
+    function handleTestMenuClick(e) {
+        setTestPeriosName(e.key)
+    };
+    const handleTestClick = () => {
+        let rightEndStr = rightEndTime;
+        const startStr = rightStartStr;
+        let newEndStr = getNextTime(rightEndTime, testPeriodName)
+        setRightEndTime(newEndStr)
+        setRightDateRange([dayjs(startStr), dayjs(newEndStr)])
     };
     function handleMiddleMenuClick(e) {
         setMiddlePeriod(genPeriodUrlKey(e.key))
@@ -729,6 +745,46 @@ export const ThreeStockChart: React.FC = () => {
         setRightEndTime(endStr)
         setRightDateRange([dayjs(startStr), dayjs(endStr)])
     };
+    
+    function getNextTime(curTime, period) {
+        // 将 curTime 字符串转换为 Date 对象
+        const year = parseInt(curTime.slice(0, 4));
+        const month = parseInt(curTime.slice(4, 6)) - 1; // 月份从 0 开始计数
+        const day = parseInt(curTime.slice(6, 8));
+        const hour = parseInt(curTime.slice(8, 10));
+        const minute = parseInt(curTime.slice(10, 12));
+        const second = parseInt(curTime.slice(12, 14));
+    
+        const date = new Date(year, month, day, hour, minute, second);
+    
+        // 根据 period 增加相应的分钟数
+        let minutesToAdd;
+        switch (period) {
+            case '1Min':
+                minutesToAdd = 1;
+                break;
+            case '5Min':
+                minutesToAdd = 5;
+                break;
+            case '30Min':
+                minutesToAdd = 30;
+                break;
+            default:
+                throw new Error('Invalid period');
+        }
+    
+        date.setMinutes(date.getMinutes() + minutesToAdd);
+    
+        // 将 Date 对象转换为所需的字符串格式
+        const nextYear = date.getFullYear();
+        const nextMonth = String(date.getMonth() + 1).padStart(2, '0');
+        const nextDay = String(date.getDate()).padStart(2, '0');
+        const nextHour = String(date.getHours()).padStart(2, '0');
+        const nextMinute = String(date.getMinutes()).padStart(2, '0');
+        const nextSecond = String(date.getSeconds()).padStart(2, '0');
+    
+        return `${nextYear}${nextMonth}${nextDay}${nextHour}${nextMinute}${nextSecond}`;
+    };
     return  <div className={styles.content}>
        <div className={styles.searchContent}>
             <Typography.Text className={styles.searchLabel}>股票代码</Typography.Text>
@@ -741,6 +797,10 @@ export const ThreeStockChart: React.FC = () => {
             <Button type="text" onClick={handleBuySellClick} style={buysellStyle}>买卖点</Button>
             <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button>
             <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>
+            <Button type="text" onClick={handleTestClick} style={{color: "#CC9966",marginLeft: 120, width: 50}}>测试</Button> 
+            <Dropdown.Button menu={testMenuProps} onClick={handleTestMenuClick} className={styles.searchMenu}>
+               {testPeriodName}
+            </Dropdown.Button>
         </div> 
         <div>
             <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
