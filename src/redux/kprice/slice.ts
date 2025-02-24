@@ -892,7 +892,7 @@ export function parseMinData(datas: any[], code: string) {
     return priceList;
 }
 
-export const codeMap = ["000688","512660"]
+export const codeMap = ["000688","512660",'588080','588000']
 export const hkCodeMap = ["01810",'09888','00700','00981','09660']
 
 export function dailyPriceUrl(code: string): string {
