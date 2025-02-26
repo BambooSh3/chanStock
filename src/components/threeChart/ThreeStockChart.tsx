@@ -35,9 +35,9 @@ export const ThreeStockChart: React.FC = () => {
     const [labelEnable, setLabelEnable] = useState<boolean>(false)
     const [markEnable, setMarkEnable] = useState<boolean>(false)
     const [macdEnable,setMacdEnable] = useState<boolean>(false)
-    const [leftMacdValue, setLeftMacdValue] = useState<number>(30)
-    const [middleMacdValue, setMiddleMacdValue] = useState<number>(20)
-    const [rightMacdValue, setRightMacdValue] = useState<number>(20)
+    const [leftMacdValue, setLeftMacdValue] = useState<number>(0)
+    const [middleMacdValue, setMiddleMacdValue] = useState<number>(0)
+    const [rightMacdValue, setRightMacdValue] = useState<number>(0)
     const [updaterValue, setUpdaterValue] = useState<number>(0)
     const [updaterTimer, setUpdaterTimer] = useState<number>(0)
     const updaterTimerRef = useRef(0);
@@ -84,7 +84,6 @@ export const ThreeStockChart: React.FC = () => {
     const [middlePeriodName, setMiddlePeriodName] = useState<string>("5分钟线")
     const [rightPeriodName, setRightPeriodName] = useState<string>("1分钟线")
     const dispatch = useDispatch();
-    const [chartHeight, setChartHeight] = useState<string>('750px')
     const ma5Color = "#FAD700"
     const ma10Color = "#40E0CD"
     const ma20Color = "#0000FF"
@@ -113,14 +112,12 @@ export const ThreeStockChart: React.FC = () => {
     const [capital, setCapital] = useState<CapitalItem>({today: 0, threeDay: 0, fiveDay: 0, todayStr: '-', threeDayStr: '-', fiveDayStr: '-'})
     const [capitalColor, setCapitalColor] = useState<[string, string, string]>(['#FF0000','#FF0000','FF0000'])
     const [dayPrice, setDayPrice] = useState<DayPriceItem>({price: 0, rate: '0%', color: '#FF0000'})
-
+    const leftHeight: number = window.innerHeight - 230;
+    const chartStr = `${leftHeight}px`
+    const [chartHeight, setChartHeight] = useState<string>(chartStr)
 
     useEffect(() => {
-        if(navigator.userAgent.indexOf('Windows') > -1) {
-            setChartHeight('500px')
-        } else {
-            setChartHeight('750px') 
-        }
+        setChartHeight(chartStr)
     }, []);
     const fetchAllData = () => {
         console.log('refresh three chart')
@@ -286,6 +283,10 @@ export const ThreeStockChart: React.FC = () => {
         const maData90 = macdEnable ? parseMaData(ma_90) : [];
         const { chartDataUp, chartDataDown } = parseVolData(priceList);
         const { chartMACD_RED, chartMACD_GREEN, chartDIF, chartDEA, max, min } = parseMACD(macd, macd_dif, macd_dea);
+        let defaultMACDValue = Math.ceil(Math.max(Math.abs(max*100), Math.abs(min*100))/1.5)
+        if (macdValue == 0) {
+            macdValue = defaultMACDValue
+        }
         const chanBi = biEnable ? parseChanBi(bi) : [];
         const centerShapes =centerEnable ? parseChanCenter(center) : [];
         const markValues = parseMarkLine(markEnable);
@@ -352,8 +353,8 @@ export const ThreeStockChart: React.FC = () => {
                 },
                 height: '15%',
                 top: '70%',
-                max: macdValue/10.0,
-                min: -macdValue/10.0,
+                max: macdValue/100.0,
+                min: -macdValue/100.0,
     
             }, {
                 title: {
@@ -795,7 +796,7 @@ export const ThreeStockChart: React.FC = () => {
             <Button type="text" onClick={handleCenterClick} style={centerStyle}>中枢</Button>
             <Button type="text" onClick={handleMarkClick} style={markStyle}>刻度</Button> 
             <Button type="text" onClick={handleBuySellClick} style={buysellStyle}>买卖点</Button>
-            <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button>
+            {/* <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button> */}
             <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>
             <Button type="text" onClick={handleTestClick} style={{color: "#CC9966",marginLeft: 120, width: 50}}>测试</Button> 
             <Dropdown.Button menu={testMenuProps} onClick={handleTestMenuClick} className={styles.searchMenu}>
@@ -816,10 +817,10 @@ export const ThreeStockChart: React.FC = () => {
                         {leftPeriodName}
                     </Dropdown.Button>
                     <RangePicker showTime onChange={handleLeftTimeChange} value={leftDateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 8}}></RangePicker>
-                    <Dropdown.Button menu={leftRangeMenuProps} onClick={handleLeftRangeMenuClick} className={styles.searchMenu}>
+                    <Dropdown.Button menu={leftRangeMenuProps} onClick={handleLeftRangeMenuClick} className={styles.rangeMenu}>
                         {leftRangeName}
                     </Dropdown.Button>
-                    <InputNumber defaultValue={leftMacdValue} min={0} max={500} onChange={LeftMACDValueChange} style={{marginLeft: 0, width: 70}}></InputNumber>
+                    <InputNumber defaultValue={leftMacdValue} min={0} max={5000} onChange={LeftMACDValueChange} style={{marginLeft: 0, width: 100}}></InputNumber>
                 </div>
                 <div className={styles.maValue}>
                     <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {leftMa5Value}</Typography.Text>
@@ -841,10 +842,10 @@ export const ThreeStockChart: React.FC = () => {
                         {middlePeriodName}
                     </Dropdown.Button>
                     <RangePicker showTime onChange={handleMiddleTimeChange} value={middleDateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 8}}></RangePicker>
-                    <Dropdown.Button menu={middleRangeMenuProps} onClick={handleMiddleRangeMenuClick} className={styles.searchMenu}>
+                    <Dropdown.Button menu={middleRangeMenuProps} onClick={handleMiddleRangeMenuClick} className={styles.rangeMenu}>
                         {middleRangeName}
                     </Dropdown.Button>
-                    <InputNumber defaultValue={middleMacdValue} min={0} max={500} onChange={MiddleMACDValueChange} style={{marginLeft: 0, width: 70}}></InputNumber>
+                    <InputNumber defaultValue={middleMacdValue} min={0} max={5000} onChange={MiddleMACDValueChange} style={{marginLeft: 0, width: 100}}></InputNumber>
 
                 </div> 
                 <div className={styles.maValue}>
@@ -865,11 +866,11 @@ export const ThreeStockChart: React.FC = () => {
                     <Dropdown.Button menu={rightMenuProps} onClick={handleRightMenuClick} className={styles.searchMenu}>
                         {rightPeriodName}
                     </Dropdown.Button>
-                    <RangePicker showTime onChange={handleRightTimeChange} value={rightDateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 8}}></RangePicker>
-                    <Dropdown.Button menu={rightRangeMenuProps} onClick={handleRightRangeMenuClick} className={styles.searchMenu}>
+                    <RangePicker showTime onChange={handleRightTimeChange} value={rightDateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 4, marginLeft:4}}></RangePicker>
+                    <Dropdown.Button menu={rightRangeMenuProps} onClick={handleRightRangeMenuClick} className={styles.rangeMenu}>
                         {rightRangeName}
                     </Dropdown.Button>
-                    <InputNumber defaultValue={rightMacdValue} min={0} max={500} onChange={RightMACDValueChange} style={{marginLeft: 0, width: 70}}></InputNumber>
+                    <InputNumber defaultValue={rightMacdValue} min={0} max={5000} onChange={RightMACDValueChange} style={{marginLeft: 0, width: 80}}></InputNumber>
                 </div> 
                 <div className={styles.maValue}>
                     <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {rightMa5Value}</Typography.Text>

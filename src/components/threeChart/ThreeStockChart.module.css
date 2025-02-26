@@ -10,7 +10,7 @@
     /* background-color: aqua; */
     align-items: center;
     justify-content: center;
-    padding-right: 20px;
+    padding-right: 1px;
     /* border: 2px solid rgb(255, 0, 25); */
 }
 .maValue {
@@ -30,6 +30,7 @@
 .searchLabel {
     align-self: center;
     margin-right: 12px;
+    font-size: 0.8rem;
 }
 .money {
     margin-right: 12px;
@@ -40,8 +41,13 @@
 }
 .searchMenu {
     width: 100px;
-    margin-left: 12px;
-    margin-right: 34px;
+    margin-left: 5px;
+    margin-right: 25px;
+}
+.rangeMenu {
+    width: 100px;
+    margin-left: 5px;
+    margin-right: 5px;
 }
 .testMenu {
     width: 100px;
@@ -52,5 +58,5 @@
     height: 100%;
 }
 .row{
-    height: 85vh;
+    height: 80vh;
 }

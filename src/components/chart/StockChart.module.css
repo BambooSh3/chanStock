@@ -23,6 +23,13 @@
 .searchLabel {
     align-self: center;
     margin-right: 12px;
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* width: 100px; */
+    /* flex-grow: 2; */
+    /* font-size: 0.8rem; */
 }
 
 .searchInput {
@@ -32,4 +39,9 @@
     width: 100px;
     margin-left: 12px;
     margin-right: 34px;
+}
+.rangeMenu {
+    width: 100px;
+    margin-left: 12px;
+    margin-right: 12px;
 }

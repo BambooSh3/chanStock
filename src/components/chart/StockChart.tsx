@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import HighchartsReact from "highcharts-react-official";
 import Highcharts, { charts, dateFormat, numberFormat } from 'highcharts/highstock';
 import styles from "./StockChart.module.css"
-import { BuySellItem, BuySellV2, ChanCenterItem, ChanPointItem, KItem, MAItem } from "../../redux/kprice/slice";
+import { BuySellItem, BuySellV2, capitalInfoUrl, CapitalItem, ChanCenterItem, ChanPointItem, dailyPriceUrl, DayPriceItem, KItem, MAItem, parseCapital, parseDailyPrice } from "../../redux/kprice/slice";
 import moment from "moment";
 import { Input, Typography, Button, Dropdown, MenuProps, DatePicker, InputNumber } from "antd";
 import { useSelector } from "../../redux/hooks";
@@ -14,6 +14,7 @@ import dayjs, { Dayjs } from "dayjs";
 import HighchartsMore from 'highcharts/highcharts-more';
 import Annotations from 'highcharts/modules/annotations';
 import { Item } from "rc-menu";
+import axios from "axios";
 
 // 加载模块
 HighchartsMore(Highcharts);
@@ -37,6 +38,7 @@ interface Props {
     macdDEA: MAItem[];
     chanBi: ChanPointItem[];
     chanCenter: ChanCenterItem[];
+    buySellPoints: BuySellV2[];
     type: "daily" | "min";
     enableTimer: boolean;
 }
@@ -408,13 +410,14 @@ export const StockChart: React.FC<Props> = (props) => {
     const centerEnable = useSelector((state) => state.periodChange.centerEnable);
     const labelEnable = useSelector((state) => state.periodChange.labelEnable);
     const macdEnable = useSelector((state) => state.periodChange.macdEnable);
-    const macdValue = useSelector((state) => state.periodChange.macdValue);
+    // const macdValue = useSelector((state) => state.periodChange.macdValue);
     const updaterValue = useSelector((state) => state.periodChange.updater);
     const updaterTimer = useSelector((state) => state.periodChange.updaterTimer);
     const updaterTimerFlag = useSelector((state) => state.periodChange.updaterFlag);
     const startTime = useSelector((state) => state.periodChange.startTime);
     const endTime = useSelector((state) => state.periodChange.endTime);
     const period = useSelector((state) => state.periodChange.period);
+    const code = useSelector((state) => state.periodChange.code);
     const biStyle = biEnable ? {color:"#FF6A6A"} : {color:"gray"};
     const centerStyle = centerEnable ? {color: "#FF6A6A"} : {color: "gray"};
     const labelStyle = labelEnable ? {color:"#FF6A6A"} : {color:"gray"};
@@ -428,9 +431,11 @@ export const StockChart: React.FC<Props> = (props) => {
     const maData90 = macdEnable ? parseMaData(props.maData90) : [];
     const { chartDataUp, chartDataDown } = parseVolData(props.data);
     const { chartMACD_RED, chartMACD_GREEN, chartDIF, chartDEA, max, min } = parseMACD(props.macd, props.macdDif, props.macdDEA);
+    const [macdValue, setMACDValue] = useState<number>(0)
+    
     const chanBi = biEnable ? parseChanBi(props.chanBi) : [];
     const centerShapes =centerEnable ? parseChanCenter(props.chanCenter) : [];
-    const labels =labelEnable ? parseChanBiLabel(props.chanBi) : [];
+    let labels =labelEnable ? parseChanBiLabel(props.chanBi) : [];
     const ma5Color = "#FAD700"
     const ma10Color = "#40E0CD"
     const ma20Color = "#0000FF"
@@ -445,13 +450,33 @@ export const StockChart: React.FC<Props> = (props) => {
     const curRange = props.data.length > 0 ? props.data[props.data.length-1].range + '%' : "0%";
     const rangeColor = curRange[0] === '-' ? "#006400" : "#FF0000"
     const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs(startTime), dayjs(endTime)]);
-    const leftHeight: number = window.innerHeight - 190;
+    const leftHeight: number = window.innerHeight - 150;
     const chartStr = `${leftHeight}px`
     const [chartHeight, setChartHeight] = useState<string>(chartStr)
+    
+    const [price, setPrice] = useState<number>(0)
+    const [priceRate, setPriceRate] = useState<number>(0)
+    const [capital, setCapital] = useState<CapitalItem>({today: 0, threeDay: 0, fiveDay: 0, todayStr: '-', threeDayStr: '-', fiveDayStr: '-'})
+    const [capitalColor, setCapitalColor] = useState<[string, string, string]>(['#FF0000','#FF0000','FF0000'])
+    const [dayPrice, setDayPrice] = useState<DayPriceItem>({price: 0, rate: '0%', color: '#FF0000'})
+    const [buySellEnable, setBuySellEnable] = useState<boolean>(true)
+    const buysellStyle = buySellEnable ? {color:"#FF6A6A"} : {color:"gray"}; 
+    const buySellItems = buySellEnable ? props.buySellPoints : [];
+    const buyselllabels = buySellItems.length>0 ? parseBuySellPointLabelV2(buySellItems):[];
+    labels = labels.concat(buyselllabels) 
     
     useEffect(() => {
         setChartHeight(chartStr)
     }, []);
+    useEffect(() => {
+        let defaultMACDValue = Math.ceil(Math.max(Math.abs(max*100), Math.abs(min*100))/1.5)
+        setMACDValue(defaultMACDValue)
+    }, [max, min]) 
+    useEffect(() => {
+        fetchBaseInfo(code)
+        fetchDailyInfo(code)
+    }, [updaterTimer, updaterValue, 
+        code]);
     
     const options = {
         chart: {
@@ -477,8 +502,8 @@ export const StockChart: React.FC<Props> = (props) => {
             },
             height: '15%',
             top: '70%',
-            max: macdValue/10.0,
-            min: -macdValue/10.0,
+            max: macdValue/100.0,
+            min: -macdValue/100.0,
 
         }, {
             title: {
@@ -632,7 +657,7 @@ export const StockChart: React.FC<Props> = (props) => {
     };
     const dispatch = useDispatch();
     const periodName = getPeriodName(period) 
-    const code = useSelector((state) => state.periodChange.code);
+    
     const dateFormat = 'YYYYMMDDHHmmss';
     const [rangeName, setRangeName] = useState<string>("一个月");
 
@@ -707,7 +732,26 @@ export const StockChart: React.FC<Props> = (props) => {
         }
     };
 
-    
+    async function fetchBaseInfo(code:string) {
+        if (capital.todayStr === '-') {
+            let url = capitalInfoUrl(code)
+            const { data } = await axios.get(url); 
+            let capitalItem = parseCapital(data) 
+            setCapital(capitalItem)
+            var todayColor = capitalItem.today > 0 ? "#FF0000" : '#006400';
+            var threeDayColor = capitalItem.threeDay > 0 ? "#FF0000" : '#006400';
+            var fiveDayColor = capitalItem.fiveDay > 0 ? "#FF0000" : '#006400';
+            setCapitalColor([todayColor, threeDayColor, fiveDayColor])
+        } 
+    }
+
+    async function fetchDailyInfo(code:string) {
+       let url = dailyPriceUrl(code) 
+       const { data } = await axios.get(url); 
+       let priceItem = parseDailyPrice(data)
+       setDayPrice(priceItem)
+
+    }
    
     const handleTimeChange = (val) => {
         setDateRange(val)
@@ -729,6 +773,9 @@ export const StockChart: React.FC<Props> = (props) => {
     const handleCenterClick = () => {
         dispatch(changeCenterActionCreator(!centerEnable))
     };
+    const handleBuySellClick = () => {
+        setBuySellEnable(!buySellEnable)
+    }
     const handleRefreshClick = () => {
         dispatch(updatePriceCreator(updaterValue+1))
     };
@@ -748,7 +795,8 @@ export const StockChart: React.FC<Props> = (props) => {
     };
     const MACDValueChange = (value: number | null) => {
         if (value != null) {
-            dispatch(macdChangeValueCreator(value))
+            // dispatch(macdChangeValueCreator(value))
+            setMACDValue(value)
         }
     };
     const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
@@ -780,7 +828,7 @@ export const StockChart: React.FC<Props> = (props) => {
                     {periodName}
                 </Dropdown.Button>
                 <RangePicker showTime onChange={handleTimeChange} value={dateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 12}}></RangePicker>
-                <Dropdown.Button menu={rangeMenuProps} onClick={handleRangeMenuClick} className={styles.searchMenu}>
+                <Dropdown.Button menu={rangeMenuProps} onClick={handleRangeMenuClick} className={styles.rangeMenu}>
                     {rangeName}
                 </Dropdown.Button>
 
@@ -788,11 +836,19 @@ export const StockChart: React.FC<Props> = (props) => {
                 <Button type="text" onClick={handleLabelClick} style={labelStyle}>标签</Button>
                 <Button type="text" onClick={handleBiClick} style={biStyle}>笔</Button>
                 <Button type="text" onClick={handleCenterClick} style={centerStyle}>中枢</Button>
-                <InputNumber defaultValue={macdValue} min={0} max={500} onChange={MACDValueChange} style={{marginLeft: 8, width: 70}}></InputNumber>
-                <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button>
+                <Button type="text" onClick={handleBuySellClick} style={buysellStyle}>买卖点</Button>
+                <InputNumber defaultValue={macdValue} min={0} max={5000} onChange={MACDValueChange} style={{marginLeft: 8, width: 100}}></InputNumber>
+                {/* <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button> */}
                 {props.enableTimer ?  
                 <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>:
                 <div></div>}
+            </div>
+            <div>
+                <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
+                <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>涨幅 {dayPrice.rate}</Typography.Text>
+                <Typography.Text style={{marginLeft: 12, color: capitalColor[0]}}>日净流入：{capital.todayStr}</Typography.Text>
+                <Typography.Text style={{marginLeft: 12, color: capitalColor[1]}}>3日净流入：{capital.threeDayStr}</Typography.Text>
+                <Typography.Text style={{marginLeft: 12, color: capitalColor[2]}}>5日净流入：{capital.fiveDayStr}</Typography.Text>
             </div>
             {macdEnable ? <div className={styles.MAContent}>
                 <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {ma5Value}</Typography.Text>
@@ -800,13 +856,8 @@ export const StockChart: React.FC<Props> = (props) => {
                 <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {ma20Value}</Typography.Text>
                 <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {ma90Value}</Typography.Text>
                 <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {ma250Value}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: "#FF0000"}}>现价 {curValue}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: rangeColor}}>涨幅 {curRange}</Typography.Text> 
-            </div> : <div className={styles.MAContent}>
-                <Typography.Text style={{marginLeft: 12, color: "#FF0000"}}>现价 {curValue}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: rangeColor}}>涨幅 {curRange}</Typography.Text> 
+            </div> : <div>
                 </div>}
-            
             
             <HighchartsReact
                 highcharts={Highcharts}

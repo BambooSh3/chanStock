@@ -4,6 +4,7 @@ import { data } from "@remix-run/router/dist/utils";
 import { dateFormat, merge } from "highcharts";
 import { idText, nodeModuleNameResolver } from "typescript";
 import { kill } from "process";
+import { stat } from "fs";
 
 export const HOST_ADDRESS = "" //127.0.0.1:8080
 export interface KItem {
@@ -94,6 +95,7 @@ interface PriceState {
     macdDEA: MAItem[];
     chanBi: ChanPointItem[];
     chanCenter: ChanCenterItem[];
+    buySellPoints: BuySellV2[];
     loading: boolean;
     error: string | null;
 }
@@ -111,6 +113,7 @@ const defaultState: PriceState = {
     macdDEA: [],
     chanBi: [],
     chanCenter: [],
+    buySellPoints: [],
     error: null,
     loading: true
 }
@@ -1035,6 +1038,7 @@ export const kPriceSlice = createSlice({
             state.macdDEA = dea;
             state.chanBi = genBiPointList(state.data);
             state.chanCenter = genCenterList(state.chanBi);
+            state.buySellPoints = genBuySellPointV2(state.chanBi, state.chanCenter, state.data, dif, dea, macd);
             state.loading = false;
             state.error = null;
         },

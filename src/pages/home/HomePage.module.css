@@ -1,7 +1,20 @@
 .content {
-    width: 1360px;
     margin-left: auto;
     margin-right: auto;
-    margin-top: 12px;
-    min-height: 85vh;
+    margin-top: 8px;
+    /* min-height: 85vh; */
+}
+
+/* 当屏幕宽度小于等于 1400px 时 */
+@media (max-width: 1460px) {
+    .content {
+        width: 96%;
+    }
+}
+
+/* 当屏幕宽度大于 1400px 时 */
+@media (min-width: 1461px) {
+    .content {
+        width: 1460px;
+    }
 }
