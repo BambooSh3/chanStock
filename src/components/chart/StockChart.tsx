@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import HighchartsReact from "highcharts-react-official";
-import Highcharts, { dateFormat, numberFormat } from 'highcharts/highstock';
+import Highcharts, { charts, dateFormat, numberFormat } from 'highcharts/highstock';
 import styles from "./StockChart.module.css"
 import { BuySellItem, BuySellV2, ChanCenterItem, ChanPointItem, KItem, MAItem } from "../../redux/kprice/slice";
 import moment from "moment";
@@ -445,14 +445,12 @@ export const StockChart: React.FC<Props> = (props) => {
     const curRange = props.data.length > 0 ? props.data[props.data.length-1].range + '%' : "0%";
     const rangeColor = curRange[0] === '-' ? "#006400" : "#FF0000"
     const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs(startTime), dayjs(endTime)]);
-    const [chartHeight, setChartHeight] = useState<string>('750px')
+    const leftHeight: number = window.innerHeight - 190;
+    const chartStr = `${leftHeight}px`
+    const [chartHeight, setChartHeight] = useState<string>(chartStr)
     
     useEffect(() => {
-        if(navigator.userAgent.indexOf('Windows') > -1) {
-            setChartHeight('500px')
-        } else {
-            setChartHeight('750px') 
-        }
+        setChartHeight(chartStr)
     }, []);
     
     const options = {
@@ -772,7 +770,6 @@ export const StockChart: React.FC<Props> = (props) => {
         }
     }
     let refreshColor = updaterTimerFlag ? "#FF0000" : "#1E90FF";
-
 
     return (
         <div className={styles.content}>

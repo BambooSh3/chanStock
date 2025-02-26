@@ -5,6 +5,7 @@ import { dateFormat, merge } from "highcharts";
 import { idText, nodeModuleNameResolver } from "typescript";
 import { kill } from "process";
 
+export const HOST_ADDRESS = "" //127.0.0.1:8080
 export interface KItem {
     open: number;
     close: number;
@@ -923,11 +924,11 @@ export function capitalInfoUrl(code: string): string {
     if (code[0] == '0' || code[0] == '3') {
         market = 'sz'
     }
-    return `http://127.0.0.1:8080/api/public/stock_individual_fund_flow?stock=${code}&market=${market}`
+    return `http://${HOST_ADDRESS}/api/public/stock_individual_fund_flow?stock=${code}&market=${market}`
 }
 
 export function genKPriceUrl(period: "day" | "min", type: "stock" | "etf" | "hk"): string {
-    if (navigator.userAgent.indexOf('Windows') > -1) {
+    if (navigator.userAgent.indexOf('Windows') > -1 && false) {
         // for remote 
         if (period == "day") {
             if (type == "stock") {
@@ -952,19 +953,19 @@ export function genKPriceUrl(period: "day" | "min", type: "stock" | "etf" | "hk"
         // for mac local
         if (period == "day") {
             if (type == "stock") {
-                return "http://127.0.0.1:8080/api/public/stock_zh_a_hist" 
+                return `http://${HOST_ADDRESS}/api/public/stock_zh_a_hist` 
         } else if (type == 'hk') {
-                return "http://127.0.0.1:8080/api/public/stock_hk_hist" 
+                return `http://${HOST_ADDRESS}/api/public/stock_hk_hist` 
         } else {
-                return "http://127.0.0.1:8080/api/public/index_zh_a_hist" 
+                return `http://${HOST_ADDRESS}/api/public/index_zh_a_hist` 
             }
         } else {
             if (type == "stock") {
-                return "http://127.0.0.1:8080/api/public/stock_zh_a_hist_min_em"
+                return `http://${HOST_ADDRESS}/api/public/stock_zh_a_hist_min_em`
             } else if (type == 'hk') {
-                return "http://127.0.0.1:8080/api/public/stock_hk_hist_min_em"  
+                return `http://${HOST_ADDRESS}/api/public/stock_hk_hist_min_em`  
             } else {
-                return "http://127.0.0.1:8080/api/public/index_zh_a_hist_min_em" 
+                return `http://${HOST_ADDRESS}/api/public/index_zh_a_hist_min_em` 
             }
         } 
     } 

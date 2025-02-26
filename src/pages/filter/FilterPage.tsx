@@ -5,7 +5,7 @@ import { DatePicker, Dropdown, Typography, Button } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import Papa from 'papaparse';
 import axios from "axios";
-import { ChanCenterItem, genBiPointList, genCenterList, genMACDData, genMAData, KItem, MAItem, parseMinData } from "../../redux/kprice/slice";
+import { ChanCenterItem, genBiPointList, genCenterList, genMACDData, genMAData, HOST_ADDRESS, KItem, MAItem, parseMinData } from "../../redux/kprice/slice";
 import { useAppDispatch, useSelector } from "../../redux/hooks";
 
 
@@ -197,16 +197,16 @@ export const FilterPage: React.FC = () => {
     }
     async function filterCode(code) {
         let url = ""
-        if (navigator.userAgent.indexOf('Windows') > -1) {
+        if (navigator.userAgent.indexOf('Windows') > -1 && false) {
             url = "http://192.168.31.62:8000/min_stock_data";
             if (codeMap.includes(code)){
                 url = "http://192.168.31.62:8000/min_etf_data"
             }
         } else {
             // 分钟k线
-            url = "http://127.0.0.1:8080/api/public/stock_zh_a_hist_min_em";
+            url = `http://${HOST_ADDRESS}/api/public/stock_zh_a_hist_min_em`;
             if (codeMap.includes(code)) {
-                url = "http://127.0.0.1:8080/api/public/index_zh_a_hist_min_em"
+                url = `http://${HOST_ADDRESS}/api/public/index_zh_a_hist_min_em`
             }
         }
         url = url + `?symbol=${code}&period=${30}&start_date=${startTime}&end_date=${endTime}`;
