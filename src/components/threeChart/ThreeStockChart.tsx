@@ -806,7 +806,7 @@ export const ThreeStockChart: React.FC = () => {
         <div>
             <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
             <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>涨幅 {dayPrice.rate}</Typography.Text>
-            <Typography.Text style={{marginLeft: 12, color: capitalColor[0]}}>日净流入：{capital.todayStr}</Typography.Text>
+            <Typography.Text style={{marginLeft: 12, color: capitalColor[0]}}>昨日净流入：{capital.todayStr}</Typography.Text>
             <Typography.Text style={{marginLeft: 12, color: capitalColor[1]}}>3日净流入：{capital.threeDayStr}</Typography.Text>
             <Typography.Text style={{marginLeft: 12, color: capitalColor[2]}}>5日净流入：{capital.fiveDayStr}</Typography.Text>
         </div>

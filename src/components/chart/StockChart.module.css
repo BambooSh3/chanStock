@@ -12,6 +12,18 @@
     justify-content: center;
     /* border: 2px solid rgb(255, 0, 25); */
 }
+.priceContent {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.searchContentMobile {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 .MAContent {
     height: 50px;
     display: flex;
@@ -20,14 +32,20 @@
     /* justify-content: center; */
     /* border: 2px solid rgb(255, 0, 25); */
 }
+.MAContentMobile {
+    height: 30px;
+    display: flex;
+    align-items: center;
+}
 .searchLabel {
     align-self: center;
     margin-right: 12px;
-    display: inline-block;
+    /* display: inline-block; */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* width: 100px; */
+    width: 70px;
+    font-size: 14px;
     /* flex-grow: 2; */
     /* font-size: 0.8rem; */
 }
@@ -44,4 +62,16 @@
     width: 100px;
     margin-left: 12px;
     margin-right: 12px;
+}
+.searchMenuMobile {
+    width: 90px;
+    margin-left: 2px;
+    margin-right: 34px;
+    font-size: 12px;
+}
+.rangeMenuMobile {
+    width: 90px;
+    margin-left: 2px;
+    margin-right: 2px;
+    font-size: 12px;
 }

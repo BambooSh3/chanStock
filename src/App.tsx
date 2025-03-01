@@ -5,11 +5,16 @@ import { HomePage, ListPage, FilterPage, BlockPage, ThreeChartPage} from './page
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { useAppDispatch, useSelector } from "./redux/hooks";
 import Papa from 'papaparse';
-import { loadCodeNameDicActionCreator } from "./redux/period/PeriodChangeAction";
+import { loadCodeNameDicActionCreator, SET_IS_MOBILE } from "./redux/period/PeriodChangeAction";
 
 function App() {
   const dispatch = useAppDispatch();
   const codeNameDic = useSelector((state) => state.periodChange.codeNameDic);
+  // const isMobile = () => {
+  //   const userAgent = typeof window.navigator === 'undefined' ? '' : navigator.userAgent;
+  //   const mobilePattern = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+  //   return mobilePattern.test(userAgent);
+  // };
   useEffect(() => {
     if(Object.keys(codeNameDic).length < 10) {
         fetch('/code_name_dic.csv')
@@ -27,7 +32,20 @@ function App() {
            })    
        }); 
     }
-}, []);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => {
+        window.removeEventListener('resize', handleResize);
+    };
+    
+  }, []);
+
+  const handleResize = () => {
+    const screenWidth = window.innerWidth;
+    const mobileThreshold = 768;
+    dispatch({ type: SET_IS_MOBILE, payload: screenWidth < mobileThreshold });
+  };
+
   return (
     <div className={styles.App}>
       <BrowserRouter>

@@ -8,7 +8,7 @@
 /* 当屏幕宽度小于等于 1400px 时 */
 @media (max-width: 1460px) {
     .content {
-        width: 96%;
+        width: 100%;
     }
 }
 

@@ -418,6 +418,7 @@ export const StockChart: React.FC<Props> = (props) => {
     const endTime = useSelector((state) => state.periodChange.endTime);
     const period = useSelector((state) => state.periodChange.period);
     const code = useSelector((state) => state.periodChange.code);
+    const isMobile = useSelector((state) => state.periodChange.isMobile); 
     const biStyle = biEnable ? {color:"#FF6A6A"} : {color:"gray"};
     const centerStyle = centerEnable ? {color: "#FF6A6A"} : {color: "gray"};
     const labelStyle = labelEnable ? {color:"#FF6A6A"} : {color:"gray"};
@@ -441,6 +442,7 @@ export const StockChart: React.FC<Props> = (props) => {
     const ma20Color = "#0000FF"
     const ma90Color = "#A52A2A"
     const ma250Color = "#EE82EE"
+    const maFontSize = isMobile? "10px" : "14px"
     const ma5Value = props.maData5.length > 0 ? props.maData5[props.maData5.length-1].close : "0";
     const ma10Value = props.maData10.length > 0 ? props.maData10[props.maData10.length-1].close : "0";
     const ma20Value = props.maData20.length > 0 ? props.maData20[props.maData20.length-1].close : "0";
@@ -821,41 +823,59 @@ export const StockChart: React.FC<Props> = (props) => {
 
     return (
         <div className={styles.content}>
-            <div className={styles.searchContent}>
-                <Typography.Text className={styles.searchLabel}>股票代码</Typography.Text>
+            <div className={isMobile ? styles.searchContentMobile : styles.searchContent}>
+                {
+                    isMobile ? <></> : <Typography.Text className={styles.searchLabel}>股票代码</Typography.Text>
+                }
                 <Input.Search className={styles.searchInput} placeholder="输入代码" defaultValue={code} onSearch={handleCodeChange}></Input.Search>
-                <Dropdown.Button menu={menuProps} onClick={handleMenuClick} className={styles.searchMenu}>
+                <Dropdown.Button menu={menuProps} onClick={handleMenuClick} className={isMobile ? styles.searchMenuMobile : styles.searchMenu}>
                     {periodName}
                 </Dropdown.Button>
-                <RangePicker showTime onChange={handleTimeChange} value={dateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 12}}></RangePicker>
-                <Dropdown.Button menu={rangeMenuProps} onClick={handleRangeMenuClick} className={styles.rangeMenu}>
+                {
+                    isMobile ? <></> : <RangePicker showTime onChange={handleTimeChange} value={dateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 12}}></RangePicker>
+                }
+                <Dropdown.Button menu={rangeMenuProps} onClick={handleRangeMenuClick} className={isMobile? styles.rangeMenuMobile: styles.rangeMenu}>
                     {rangeName}
                 </Dropdown.Button>
 
-                <Button type="text" onClick={handleMACDClick} style={macdStyle}>MA</Button>
-                <Button type="text" onClick={handleLabelClick} style={labelStyle}>标签</Button>
-                <Button type="text" onClick={handleBiClick} style={biStyle}>笔</Button>
-                <Button type="text" onClick={handleCenterClick} style={centerStyle}>中枢</Button>
-                <Button type="text" onClick={handleBuySellClick} style={buysellStyle}>买卖点</Button>
-                <InputNumber defaultValue={macdValue} min={0} max={5000} onChange={MACDValueChange} style={{marginLeft: 8, width: 100}}></InputNumber>
-                {/* <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button> */}
-                {props.enableTimer ?  
-                <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>:
-                <div></div>}
+                {
+                    isMobile? <></> :<>
+                    <Button type="text" onClick={handleMACDClick} style={macdStyle}>MA</Button>
+                    <Button type="text" onClick={handleLabelClick} style={labelStyle}>标签</Button>
+                    <Button type="text" onClick={handleBiClick} style={biStyle}>笔</Button>
+                    <Button type="text" onClick={handleCenterClick} style={centerStyle}>中枢</Button>
+                    <Button type="text" onClick={handleBuySellClick} style={buysellStyle}>买卖点</Button>
+                    <InputNumber defaultValue={macdValue} min={0} max={5000} onChange={MACDValueChange} style={{marginLeft: 8, width: 100}}></InputNumber>
+                    {/* <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button> */}
+                    {props.enableTimer ?  
+                    <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>:
+                    <div></div>}
+                    </>
+                }
             </div>
-            <div>
+            <div className={styles.priceContent}>
                 <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
                 <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>涨幅 {dayPrice.rate}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: capitalColor[0]}}>日净流入：{capital.todayStr}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: capitalColor[1]}}>3日净流入：{capital.threeDayStr}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: capitalColor[2]}}>5日净流入：{capital.fiveDayStr}</Typography.Text>
+                {
+                    isMobile? <>
+                        <Button type="text" onClick={handleMACDClick} style={macdStyle}>MA</Button>
+                        {props.enableTimer ?  
+                        <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>:
+                        <div></div>}
+                    </>
+                    : <>
+                        <Typography.Text style={{marginLeft: 12, color: capitalColor[0]}}>昨日净流入：{capital.todayStr}</Typography.Text>
+                        <Typography.Text style={{marginLeft: 12, color: capitalColor[1]}}>3日净流入：{capital.threeDayStr}</Typography.Text>
+                        <Typography.Text style={{marginLeft: 12, color: capitalColor[2]}}>5日净流入：{capital.fiveDayStr}</Typography.Text>
+                    </>
+                }
             </div>
-            {macdEnable ? <div className={styles.MAContent}>
-                <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {ma5Value}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: ma10Color}}>MA10 {ma10Value}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {ma20Value}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {ma90Value}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {ma250Value}</Typography.Text>
+            {macdEnable ? <div className={isMobile? styles.MAContentMobile : styles.MAContent}>
+                <Typography.Text style={{marginLeft: 12, color: ma5Color, fontSize: maFontSize}}>MA5 {ma5Value}</Typography.Text>
+                <Typography.Text style={{marginLeft: 12, color: ma10Color, fontSize: maFontSize}}>MA10 {ma10Value}</Typography.Text>
+                <Typography.Text style={{marginLeft: 12, color: ma20Color, fontSize: maFontSize}}>MA20 {ma20Value}</Typography.Text>
+                <Typography.Text style={{marginLeft: 12, color: ma90Color, fontSize: maFontSize}}>MA90 {ma90Value}</Typography.Text>
+                <Typography.Text style={{marginLeft: 12, color: ma250Color, fontSize: maFontSize}}>MA250 {ma250Value}</Typography.Text>
             </div> : <div>
                 </div>}
             
