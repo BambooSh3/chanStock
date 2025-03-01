@@ -373,19 +373,45 @@ function priceAroundCenter(center: ChanCenterItem, price: number): boolean {
     return res; 
 }
 //比较两个bottom点，后一个是否发生背驰 // todo
-function bottomTurningPoint(prePointIndex: number, pointIndex: number, dif: MAItem[]): boolean {
+function bottomTurningPoint(prePointIndex: number, pointIndex: number, dif: MAItem[], macd: MAItem[]): boolean {
     let res = false;
     if(dif[pointIndex].close > dif[prePointIndex].close) {
         res = true
     }
+    let preArea = findMACDArea(macd, prePointIndex)
+    let curArea = findMACDArea(macd, pointIndex)
+    if (preArea!=null && curArea != null) {
+        if(preArea < 0 && curArea < 0 && Math.abs(preArea) > Math.abs(curArea) * 1.2) {
+            res = true
+        }
+        if(preArea > 0 && curArea > 0 && Math.abs(curArea)> Math.abs(preArea)) {
+            res = true
+        }
+        if(preArea < 0 && curArea > 0) {
+            res = true
+        }
+    }
     return res;
 }
 //比较两个top点，后一个是否发生背驰 // todo
-function topTurningPoint(prePointIndex: number, pointIndex: number, dif: MAItem[]): boolean {
+function topTurningPoint(prePointIndex: number, pointIndex: number, dif: MAItem[], macd: MAItem[]): boolean {
     let res = false;
     if(dif[pointIndex].close < dif[prePointIndex].close) {
         res = true
     }
+    let preArea = findMACDArea(macd, prePointIndex)
+    let curArea = findMACDArea(macd, pointIndex)
+    if (preArea!=null && curArea != null) {
+        if(preArea > 0 && curArea > 0 && Math.abs(preArea) > Math.abs(curArea) * 1.2) {
+            res = true
+        }
+        if(preArea > 0 && curArea < 0) {
+            res = true
+        }
+        if(preArea < 0 && curArea < 0 && Math.abs(curArea) > Math.abs(preArea)) {
+            res = true
+        }
+    } 
     return res;
 }
 
@@ -409,59 +435,82 @@ export function genBuySellPointV2(
             if (nearCenter == null) {
                 continue;
             }
-            if (priceAroundCenter(nearCenter, point.point)) {
-                //再判断是否背驰
-                let prePoint = findNearPoint(bi, i-1, point.type)
-                if(prePoint == null) { continue }
-                if (point.type == 'bottom') {
-                    if(bottomTurningPoint(prePoint.index, point.index, dif)) {
-                        //买点
-                        //是否还在下跌
-                        let stillGoDown = macd[point.index - 1].close > macd[point.index].close
-                        if (lastKItem.index != point.index || (!stillGoDown && lastKItem.index == point.index)) {
-                            let buyPoint:BuySellV2 = {type: 'buy', date: point.date, index: point.index, price: point.point}
-                            result.push(buyPoint);
-                        }
+            let prePoint = findNearPoint(bi, i-1, point.type)
+            if(prePoint == null) { continue }
+            let aroundCenter = priceAroundCenter(nearCenter, point.point)
+            //再判断是否背驰
+            if (point.type == 'bottom') {
+                let flag1 = aroundCenter 
+                let flag2 = kItems[prePoint.index].low > kItems[point.index].low
+                
+                if(bottomTurningPoint(prePoint.index, point.index, dif, macd) && (flag1 || flag2)) {
+                    //买点
+                    //是否还在下跌
+                    let stillGoDown = macd[point.index - 1].close > macd[point.index].close
+                    if (lastKItem.index != point.index || (!stillGoDown && lastKItem.index == point.index)) {
+                        let buyPoint:BuySellV2 = {type: 'buy', date: point.date, index: point.index, price: point.point}
+                        result.push(buyPoint);
                     }
-                } else {
-                    if(topTurningPoint(prePoint.index, point.index, dif)) {
-                        //卖点
-                        let stillGoUp = macd[point.index - 1].close < macd[point.index].close
-                        if (lastKItem.index != point.index || (!stillGoUp && lastKItem.index == point.index)) {
-                            let buyPoint:BuySellV2 = {type: 'sell', date: point.date, index: point.index, price: point.point}
-                            result.push(buyPoint);
-                        }
-                    } 
                 }
-            }  
-        }
+            } else {
+                let flag1 = aroundCenter 
+                let flag2 = kItems[prePoint.index].high < kItems[point.index].high
+                // console.log('haojin test bottom', 'aroundCenter:',flag1,'背离:', flag2,topTurningPoint(prePoint.index, point.index, dif, macd),'price:',point.point)
+                if(topTurningPoint(prePoint.index, point.index, dif, macd) && (flag1 || flag2)) {
+                    //卖点
+                    let stillGoUp = macd[point.index - 1].close < macd[point.index].close
+                    if (lastKItem.index != point.index || (!stillGoUp && lastKItem.index == point.index)) {
+                        // console.log('draw sell point:',point.point)
+                        let buyPoint:BuySellV2 = {type: 'sell', date: point.date, index: point.index, price: point.point}
+                        result.push(buyPoint);
+                    }
+                } 
+            }
+    }
         
         if(lastKItem.index - lastPoint.index <= 3) {
             //当前k线间隔太近的先不处理
         } else {
             //判断当前k线是否满足买卖点条件
-            if(priceAroundCenter(lastCenter, lastKItem.close)) {
-                if(lastPoint.type == 'top' && lastKItem.high < lastPoint.point) {
+            // if(priceAroundCenter(lastCenter, lastKItem.close)) {
+                let aroundCenter = priceAroundCenter(lastCenter, lastKItem.close)
+                // let areaMore = false
+                // let areaLess = false
+                // let prePoint = findNearPoint(bi, bi.length-2, lastPoint.type)
+                // if (prePoint != null) {
+                //     let preArea = findMACDArea(macd, prePoint.index)
+                //     let area = findMACDArea(macd, lastPoint.index)
+                //     if(preArea != null && area != null) {
+                //         let preMACDArea = Math.abs(preArea)
+                //         let curMACDArea = Math.abs(area)
+                //         if(preMACDArea * 1.2 < curMACDArea) {
+                //             areaMore = true
+                //         } else if (preMACDArea > curMACDArea * 1.2) {
+                //             areaLess = true
+                //         }
+                //     }
+                // }
+                if(aroundCenter && lastPoint.type == 'top' && lastKItem.high < lastPoint.point) {
                     //当作bottom处理
                     let prePoint = findNearPoint(bi, bi.length-1-1, 'bottom')
                     //是否还在下跌
                     let stillGoDown = macd[lastKItem.index - 1].close > macd[lastKItem.index].close
-                    if(!stillGoDown && prePoint!=null && bottomTurningPoint(prePoint.index, lastKItem.index, dif)) {
+                    if(!stillGoDown && prePoint!=null && bottomTurningPoint(prePoint.index, lastKItem.index, dif, macd)) {
                         //买点
                         let buyPoint:BuySellV2 = {type: 'buy', date: lastKItem.date, index: lastKItem.index, price: lastKItem.low}
                         result.push(buyPoint); 
                     }
-                } else if (lastPoint.type == 'bottom' && lastKItem.low > lastPoint.point) {
+                } else if (aroundCenter && lastPoint.type == 'bottom' && lastKItem.low > lastPoint.point) {
                     //当作top处理
                     let prePoint = findNearPoint(bi, bi.length-1-1,'top')
                     let stillGoUp = macd[lastKItem.index - 1].close < macd[lastKItem.index].close
-                    if (!stillGoUp && prePoint != null && topTurningPoint(prePoint.index, lastKItem.index, dif)) {
+                    if (!stillGoUp && prePoint != null && topTurningPoint(prePoint.index, lastKItem.index, dif, macd)) {
                         let buyPoint:BuySellV2 = {type: 'sell', date: lastKItem.date, index: lastKItem.index, price: lastKItem.high}
                         result.push(buyPoint);  
-                        console.log('haojin test sell2', macd[lastKItem.index - 1], macd[lastKItem.index])
+                        // console.log('haojin test sell2', macd[lastKItem.index - 1], macd[lastKItem.index])
                     }
                 }
-            }
+            // }
         }
         return result;
     } 

@@ -174,7 +174,7 @@ export function parseBuySellPointLabelV2(data: BuySellV2[]) {
         let date = moment(data[i]["date"]).toDate();
         let color = data[i]["type"] === "buy" ? "#FF0000" : "#006400"
         let text = data[i]["type"] === "buy" ? "buy" : "sell"
-        let offsetY = data[i]["type"] === "buy" ? 35 : -10; 
+        let offsetY = data[i]["type"] === "buy" ? 35 :-10; 
         let label = {
             point: {
                 x: dateToUTCNumber(date),
@@ -187,7 +187,7 @@ export function parseBuySellPointLabelV2(data: BuySellV2[]) {
             borderColor: color,
             borderWidth: 1,
             style: {
-                fontSize: '12px',
+                fontSize: '10px',
                 fontColor: color
             },
             y: offsetY

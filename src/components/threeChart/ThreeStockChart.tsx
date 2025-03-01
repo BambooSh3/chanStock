@@ -517,7 +517,7 @@ export const ThreeStockChart: React.FC = () => {
         onClick: handleLeftMenuClick,
     };
     const testMenuProps = {
-        items: [{label: '间隔1分钟', key: '1Min'},{label: '间隔5分钟', key: '5Min'},{label: '间隔30分钟', key:'30Min'}],
+        items: [{label: '间隔1分钟', key: '1Min'},{label: '间隔5分钟', key: '5Min'},{label: '间隔30分钟', key:'30Min'},{label: '间隔1天',key: '1Day'}],
         onClick: handleTestMenuClick,
     };
     const middleMenuProps = {
@@ -769,6 +769,9 @@ export const ThreeStockChart: React.FC = () => {
                 break;
             case '30Min':
                 minutesToAdd = 30;
+                break;
+            case '1Day':
+                minutesToAdd = 24 * 60
                 break;
             default:
                 throw new Error('Invalid period');
