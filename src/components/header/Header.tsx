@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "../../redux/hooks";
 
 interface Props {
-    type: "home" | "list" | "filter" | "block" | "three"
+    type: "home" | "list" | "filter" | "block" | "three" | "test"
 }
 
 
@@ -27,12 +27,16 @@ export const Header: React.FC<Props> = (prop) => {
     function navThreePage() {
         navigate('/threeChartPage')
     }
+    function navTestPage() {
+        navigate('/testPage')
+    }
     return <div className={styles.content}>
         {/* <div className={styles.title}>缠中说禅项目</div> */}
         <Button type="text" onClick={navHomePage} className={prop.type == 'home' ? styles.navbtnSelect : styles.navbtn}>首页</Button>
         {!isMobile && (
             <>
             <Button type="text" onClick={navThreePage} className={prop.type == 'three' ? styles.navbtnSelect : styles.navbtn}>三屏浏览</Button>
+            <Button type="text" onClick={navTestPage} className={prop.type == 'test' ? styles.navbtnSelect : styles.navbtn}>策略测试</Button>
             <Button type="text" onClick={navListPage} className={prop.type == 'list' ? styles.navbtnSelect : styles.navbtn}>列表页</Button>
             <Button type="text" onClick={navFilterPage} className={prop.type == 'filter' ? styles.navbtnSelect : styles.navbtn}>智选</Button>
             {/* <Button type="text" onClick={navBlockPage} className={prop.type == 'block' ? styles.navbtnSelect : styles.navbtn}>双屏浏览</Button> */}

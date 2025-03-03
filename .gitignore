@@ -12,3 +12,4 @@ yarn-error.log*
 # 忽略打包后的构建文件（根据项目配置可能有所不同）
 build
 dist
+src/components/.DS_Store

@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import HighchartsReact from "highcharts-react-official";
 import Highcharts, { charts, dateFormat, numberFormat } from 'highcharts/highstock';
 import styles from "./StockChart.module.css"
-import { BuySellItem, BuySellV2, capitalInfoUrl, CapitalItem, ChanCenterItem, ChanPointItem, dailyPriceUrl, DayPriceItem, KItem, MAItem, parseCapital, parseDailyPrice } from "../../redux/kprice/slice";
+import { BuySellItem, BuySellV2, capitalInfoUrl, CapitalItem, ChanCenterItem, ChanPointItem, dailyPriceUrl, DayPriceItem, genBiPointList, genBuySellPointV2, genCenterList, genMACDData, KItem, MAItem, parseCapital, parseDailyPrice } from "../../redux/kprice/slice";
 import moment from "moment";
 import { Input, Typography, Button, Dropdown, MenuProps, DatePicker, InputNumber } from "antd";
 import { useSelector } from "../../redux/hooks";
 import { useDispatch } from "react-redux";
 import { changePeriodActionCreator, changeCodeActionCreator, changeTimeActionCreator, changeBiActionCreator,
      changeCenterActionCreator, changeLabelActionCreator, changeMACDActionCreator, macdChangeValueCreator,
-      updatePriceCreator,updateTimerCreator, updateTimerFlagCreator } from "../../redux/period/PeriodChangeAction"
+      updatePriceCreator,updateTimerCreator, updateTimerFlagCreator, 
+      changeLabelsCreator} from "../../redux/period/PeriodChangeAction"
 import dayjs, { Dayjs } from "dayjs";
 import HighchartsMore from 'highcharts/highcharts-more';
 import Annotations from 'highcharts/modules/annotations';
@@ -41,6 +42,7 @@ interface Props {
     buySellPoints: BuySellV2[];
     type: "daily" | "min";
     enableTimer: boolean;
+    labels: any[];
 }
 
 function dateToUTCNumber(date: Date): number {
@@ -77,14 +79,14 @@ function parseMinData(data: KItem[]) {
 }
 
 
-export function parseData(data: KItem[], type: "daily" | "min") {
+function parseData(data: KItem[], type: "daily" | "min") {
     if (type == "daily") {
         return parseDailyData(data);
     } else {
         return parseMinData(data);
     }
 }
-export function parseMaData(data: MAItem[]) {
+function parseMaData(data: MAItem[]) {
     let chartData: number[][] = [];
     for (let item of data) {
         // console.log("haojin item:", item["date"]);
@@ -95,7 +97,7 @@ export function parseMaData(data: MAItem[]) {
     }
     return chartData;
 }
-export function parseVolData(data: KItem[]) {
+function parseVolData(data: KItem[]) {
     let chartDataUp: number[][] = [];
     let chartDataDown: number[][] = [];
     for (let item of data) {
@@ -111,7 +113,7 @@ export function parseVolData(data: KItem[]) {
     return { chartDataUp, chartDataDown };
 }
 
-export function parseMACD(macd, macdDif, macdDEA) {
+function parseMACD(macd, macdDif, macdDEA) {
     let chartMACD_RED: number[][] = [];
     let chartMACD_GREEN: number[][] = [];
     let chartDIF: number[][] = [];
@@ -157,7 +159,7 @@ export function parseMACD(macd, macdDif, macdDEA) {
     }
     return { chartMACD_RED: chartMACD_RED, chartMACD_GREEN: chartMACD_GREEN, chartDIF: chartDIF, chartDEA: chartDEA, max: max, min: min }
 }
-export function parseChanBi(data: ChanPointItem[]) {
+function parseChanBi(data: ChanPointItem[]) {
     let chartBi: number[][] = [];
     
     for (let item of data) {
@@ -168,13 +170,13 @@ export function parseChanBi(data: ChanPointItem[]) {
     // console.log("bi: ", chartBi.length)
     return chartBi;
 }
-export function parseBuySellPointLabelV2(data: BuySellV2[]) {
+function parseBuySellPointLabelV2(data: BuySellV2[]) {
     let labels: any[] = []
     for (let i=0;i<data.length;i++) {
         let date = moment(data[i]["date"]).toDate();
         let color = data[i]["type"].startsWith('buy') ? "#FF0000" : "#006400"
         let text = data[i]["type"]
-        let offsetY = data[i]["type"].startsWith('buy') ? 25 :-10; 
+        let offsetY = data[i]["type"].startsWith('buy') ? 25 : -10; 
         let label = {
             point: {
                 x: dateToUTCNumber(date),
@@ -196,7 +198,7 @@ export function parseBuySellPointLabelV2(data: BuySellV2[]) {
     }
     return labels 
 }
-export function parseBuySellPointLabel(data: BuySellItem[]) {
+function parseBuySellPointLabel(data: BuySellItem[]) {
     let labels: any[] = []
     for (let i=0;i<data.length;i++) {
         let date = moment(data[i]["date"]).toDate();
@@ -221,7 +223,7 @@ export function parseBuySellPointLabel(data: BuySellItem[]) {
     }
     return labels 
 }
-export function parseChanBiLabel(data: ChanPointItem[]) {
+function parseChanBiLabel(data: ChanPointItem[]) {
     let labels: any[] = []
     for (let i=0;i<data.length;i++) {
      
@@ -247,7 +249,7 @@ export function parseChanBiLabel(data: ChanPointItem[]) {
     // console.log('test: ',labels)
     return labels
 }
-export function parseMarkLine(enable) {
+function parseMarkLine(enable) {
     let xAxisDic = {type: 'datetime'}
     let plotLines:any[] = []
     if (!enable) {
@@ -279,7 +281,7 @@ export function parseMarkLine(enable) {
     xAxisDic['plotLines'] = plotLines
     return xAxisDic
 }
-export function parseChanCenter(data: ChanCenterItem[]) {
+function parseChanCenter(data: ChanCenterItem[]) {
     // console.log("chan center: ", data)
     let shapes: any[] = [];
     for(let item of data) {
@@ -322,7 +324,7 @@ export function parseChanCenter(data: ChanCenterItem[]) {
     }
     return shapes;
 }
-export const rangeList = [
+const rangeList = [
     { name: "一天", key: "Day_1" },
     { name: "一天半", key: "Day_1_half"},
     { name: "二天", key: "Day_2"},
@@ -333,7 +335,7 @@ export const rangeList = [
     { name: "六个月", key: "Month_6" },
     { name: "一年", key: "Year_1" },
 ];
-export const periodList = [
+const periodList = [
     { name: "周线", period: "w" },
     { name: "日线", period: "d" },
     { name: "1分钟线", period: "1min" },
@@ -343,7 +345,7 @@ export const periodList = [
     { name: "60分钟线", period: "60min" },
 ];
 
-export function getPeriodName(period: string) {
+function getPeriodName(period: string) {
     let name = "30分钟线"
     for(const item of periodList){
         if(item.period == period) {
@@ -353,7 +355,7 @@ export function getPeriodName(period: string) {
     }
     return name
 }
-export function genPeriodUrlKey(period: string) {
+function genPeriodUrlKey(period: string) {
     if (period == 'w') {
         return 'weekly'
     } else if (period == 'd') {
@@ -372,7 +374,7 @@ export function genPeriodUrlKey(period: string) {
     return ""
 }
 
-export function findRangeName(key) {
+function findRangeName(key) {
     let name = "选择日期"
     for(const item of rangeList) {
         if(item.key == key) {
@@ -383,7 +385,7 @@ export function findRangeName(key) {
     return name
 }
 
-export function getCurrentDateFormatted(before, style): string {
+function getCurrentDateFormatted(before, style): string {
     const now = new Date();
     while (isWeekend(now)) {
         now.setDate(now.getDate() - 1);
@@ -400,12 +402,12 @@ export function getCurrentDateFormatted(before, style): string {
 }
 
 // 判断给定日期是否是周末（周六或周日）
-export function isWeekend(date: Date): boolean {
+function isWeekend(date: Date): boolean {
     const dayOfWeek = date.getDay();
     return dayOfWeek === 0 || dayOfWeek === 6; // 0表示周日，6表示周六
 }
 
-export const StockChart: React.FC<Props> = (props) => {
+export const StockChartTest: React.FC<Props> = (props) => {
     const biEnable = useSelector((state) => state.periodChange.biEnable);
     const centerEnable = useSelector((state) => state.periodChange.centerEnable);
     const labelEnable = useSelector((state) => state.periodChange.labelEnable);
@@ -437,6 +439,7 @@ export const StockChart: React.FC<Props> = (props) => {
     const chanBi = biEnable ? parseChanBi(props.chanBi) : [];
     const centerShapes =centerEnable ? parseChanCenter(props.chanCenter) : [];
     let labels =labelEnable ? parseChanBiLabel(props.chanBi) : [];
+    let analyzeLabels = []
     const ma5Color = "#FAD700"
     const ma10Color = "#40E0CD"
     const ma20Color = "#0000FF"
@@ -465,11 +468,16 @@ export const StockChart: React.FC<Props> = (props) => {
     const buysellStyle = buySellEnable ? {color:"#FF6A6A"} : {color:"gray"}; 
     const buySellItems = buySellEnable ? props.buySellPoints : [];
     const buyselllabels = buySellItems.length>0 ? parseBuySellPointLabelV2(buySellItems):[];
-    labels = labels.concat(buyselllabels) 
-    
-    useEffect(() => {
-        setChartHeight(chartStr)
-    }, []);
+   
+    const [analyze, setAnalyze] = useState<boolean>(false)
+    const [step, setStep] = useState<number>(0)
+    const [stepSize, setStepSize] = useState<number>(1)
+
+   
+    // useEffect(() => {
+    //     setChartLabels(labels)
+    //     console.log('haojin test set labels:', labels.length)
+    // }, [labels.length]);
     useEffect(() => {
         let defaultMACDValue = Math.ceil(Math.max(Math.abs(max*100), Math.abs(min*100))/1.5)
         setMACDValue(defaultMACDValue)
@@ -653,10 +661,13 @@ export const StockChart: React.FC<Props> = (props) => {
         ],
         annotations: [{
             shapes:centerShapes,
-            labels:labels
+            labels:props.labels
 
         }]
     };
+    useEffect(() => {
+        setChartHeight(chartStr)
+    }, []);
     const dispatch = useDispatch();
     const periodName = getPeriodName(period) 
     
@@ -791,6 +802,114 @@ export const StockChart: React.FC<Props> = (props) => {
             stopUpdating();
         }
     };
+    function addUniqueItem(arr: BuySellV2[], newItem: BuySellV2): BuySellV2[] {
+        const isDuplicate = arr.find(item => 
+            item.type === newItem.type &&
+            item.date === newItem.date &&
+            item.index === newItem.index
+        );
+        if (!isDuplicate) {
+            arr.push(newItem);
+        }
+        return arr;
+    }
+    const replayFunction = () => {
+        let processArray:KItem[] = []
+        let analyzePoints:BuySellV2[] = []
+        for(let i=0; i < props.data.length && i <= step; i++) {
+            processArray.push(props.data[i])
+        }
+        if(processArray.length == 0) {
+            return
+        }
+        let {macd, dif, dea} = genMACDData(processArray)
+        let chanBi = genBiPointList(processArray)
+        let chanCenter = genCenterList(chanBi)
+        let buySellPoints = genBuySellPointV2(chanBi, chanCenter, processArray, dif, dea, macd)
+        labels = parseBuySellPointLabelV2(buySellPoints)
+        let lastK = processArray[processArray.length - 1]
+        let date = moment(lastK.date).toDate()
+        let lastPoint = buySellPoints[buySellPoints.length - 1]
+        if ((lastPoint != null && lastPoint != undefined && lastPoint.index != lastK.index) || lastPoint == undefined || lastPoint == null) {
+            let testLabel = {
+                point: {
+                    x: dateToUTCNumber(date),
+                    y: lastK.close,
+                    xAxis: 0,
+                    yAxis: 0
+                },
+                text: 'test',
+                backgroundColor: 'rgba(255, 255, 255, 0)',
+                borderColor: '#0000FF',
+                borderWidth: 1,
+                style: {
+                    fontSize: '8px',
+                    fontColor: '#0000FF'
+                },
+                y: 0
+            }
+            labels.push(testLabel)
+        }
+        dispatch(changeLabelsCreator(labels)) 
+    }
+    const handleReplyBackClick = () => {
+        setStep(step - stepSize)
+        replayFunction()
+    };
+    const handleReplyClick = () => {
+        setStep(step + stepSize)
+        replayFunction()
+    };
+    const handleStepSizeClick = (value: number | null) => {
+        if (value != null) {
+            setStepSize(value)
+        }
+        
+    }
+    
+    const handleClearReply = () => {
+        setStep(0)
+        let {macd, dif, dea} = genMACDData(props.data)
+        let chanBi = genBiPointList(props.data)
+        let chanCenter = genCenterList(chanBi)
+        let buySellPoints = genBuySellPointV2(chanBi, chanCenter, props.data, dif, dea, macd)
+        labels = parseBuySellPointLabelV2(buySellPoints)
+        dispatch(changeLabelsCreator(labels))
+    }
+    const handleAnalyzeClick = () => {
+        // const startStr = val[0].format(dateFormat);
+        // const endStr = val[1].format(dateFormat);
+        if(analyze == true) {
+            //正在分析，不重复分析
+            return
+        }
+        setAnalyze(true)
+        const startStr = dateRange[0].format(dateFormat);
+        const endStr = dateRange[1].format(dateFormat);
+        let processArray:KItem[] = []
+        let analyzePoints:BuySellV2[] = []
+        for(let i=0; i < props.data.length; i++) {
+            processArray.push(props.data[i])
+            let {macd, dif, dea} = genMACDData(processArray)
+            let chanBi = genBiPointList(processArray)
+            let chanCenter = genCenterList(chanBi)
+            let buySellPoints = genBuySellPointV2(chanBi, chanCenter, processArray, dif, dea, macd)
+            let point = buySellPoints[buySellPoints.length - 1]
+            if(point != undefined && point != null) {
+                if(analyzePoints.length == 0) {
+                    analyzePoints.push(point)
+                } else {
+                    analyzePoints = addUniqueItem(analyzePoints, point)
+                }
+            }
+        }
+        // setChartLabels(analyzePoints)
+        // labels = analyzePoints
+        labels = parseBuySellPointLabelV2(analyzePoints) 
+        console.log('haojin test buy sell cnt:', labels.length)
+        dispatch(changeLabelsCreator(labels))
+        setAnalyze(false)
+    };
     
     const handleMACDClick = () => {
         dispatch(changeMACDActionCreator(!macdEnable))
@@ -838,46 +957,14 @@ export const StockChart: React.FC<Props> = (props) => {
                     {rangeName}
                 </Dropdown.Button>
 
-                {
-                    isMobile? <></> :<>
-                    <Button type="text" onClick={handleMACDClick} style={macdStyle}>MA</Button>
-                    <Button type="text" onClick={handleLabelClick} style={labelStyle}>标签</Button>
-                    <Button type="text" onClick={handleBiClick} style={biStyle}>笔</Button>
-                    <Button type="text" onClick={handleCenterClick} style={centerStyle}>中枢</Button>
-                    <Button type="text" onClick={handleBuySellClick} style={buysellStyle}>买卖点</Button>
-                    <InputNumber defaultValue={macdValue} min={0} max={5000} onChange={MACDValueChange} style={{marginLeft: 8, width: 100}}></InputNumber>
-                    {/* <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button> */}
-                    {props.enableTimer ?  
-                    <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>:
-                    <div></div>}
-                    </>
-                }
+                {/* <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button> */}
+                <Button type="text" onClick={handleAnalyzeClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{analyze ? "正在分析": "分析"}</Button>
+                <Button type="text" onClick={handleReplyClick} style={{color: refreshColor,marginLeft: 2, width: 50}}>重放+1</Button>
+                <Button type="text" onClick={handleReplyBackClick} style={{color: refreshColor,marginLeft: 2, width: 50}}>重放-1</Button>
+                <Button type="text" onClick={handleClearReply} style={{color: refreshColor,marginLeft: 2, width: 50}}>取消重放</Button>
+                <InputNumber defaultValue={stepSize} min={0} max={100} onChange={handleStepSizeClick} style={{marginLeft: 8, width: 100}}></InputNumber>
+                
             </div>
-            <div className={styles.priceContent}>
-                <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>涨幅 {dayPrice.rate}</Typography.Text>
-                {
-                    isMobile? <>
-                        <Button type="text" onClick={handleMACDClick} style={macdStyle}>MA</Button>
-                        {props.enableTimer ?  
-                        <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>:
-                        <div></div>}
-                    </>
-                    : <>
-                        <Typography.Text style={{marginLeft: 12, color: capitalColor[0]}}>昨日净流入：{capital.todayStr}</Typography.Text>
-                        <Typography.Text style={{marginLeft: 12, color: capitalColor[1]}}>3日净流入：{capital.threeDayStr}</Typography.Text>
-                        <Typography.Text style={{marginLeft: 12, color: capitalColor[2]}}>5日净流入：{capital.fiveDayStr}</Typography.Text>
-                    </>
-                }
-            </div>
-            {macdEnable ? <div className={isMobile? styles.MAContentMobile : styles.MAContent}>
-                <Typography.Text style={{marginLeft: 12, color: ma5Color, fontSize: maFontSize}}>MA5 {ma5Value}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: ma10Color, fontSize: maFontSize}}>MA10 {ma10Value}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: ma20Color, fontSize: maFontSize}}>MA20 {ma20Value}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: ma90Color, fontSize: maFontSize}}>MA90 {ma90Value}</Typography.Text>
-                <Typography.Text style={{marginLeft: 12, color: ma250Color, fontSize: maFontSize}}>MA250 {ma250Value}</Typography.Text>
-            </div> : <div>
-                </div>}
             
             <HighchartsReact
                 highcharts={Highcharts}

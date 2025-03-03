@@ -14,6 +14,7 @@ export const UPDATE_PRICE_TIMER_FLAG = "update_price_timer_flag"
 export const CHANGE_CODE_LIST = "change_code_list"
 export const LOAD_CODE_NAME_DIC = "load_code_name_dic"
 export const SET_IS_MOBILE = "set_is_mobile"
+export const CHANGE_LABELS = "change_labels"
 
 export interface DataType {
     key: string;
@@ -78,17 +79,27 @@ export interface setIsMobileAction {
     type: typeof SET_IS_MOBILE;
     payload: boolean;
 }
-
+export interface changeLabelsAction {
+    type: typeof CHANGE_LABELS;
+    payload: any[];
+}
 
 export type StockInfoChangeAction = PeriodChangeAction | CodeChangeAction | MACDChangeValue |
  TimeChangeAction | LabelChangeAction | CenterChangeAction | BiChangeAction | MACDChangeAction
-  | UpdatePrice | UpdatePriceTimer | UpdatePriceTimerFlag | ChangeCodeListAction | LoadCodeNameDicAction | setIsMobileAction;
+  | UpdatePrice | UpdatePriceTimer | UpdatePriceTimerFlag | ChangeCodeListAction | LoadCodeNameDicAction |
+   setIsMobileAction | changeLabelsAction;
 
 
 export const changeCodeListActionCreator = (list: DataType[]): StockInfoChangeAction => {
     return {
         type: CHANGE_CODE_LIST,
         payload: list
+    }
+}
+export const changeLabelsCreator = (labels: any[]):changeLabelsAction => {
+    return {
+        type: CHANGE_LABELS,
+        payload: labels
     }
 }
 export const loadCodeNameDicActionCreator = (dic: {}): StockInfoChangeAction => {

@@ -80,7 +80,6 @@ export const ThreeStockChart: React.FC = () => {
     const [middlePeriod, setMiddlePeriod] = useState<string>("5")
     const [rightPeriod, setRightPeriod] = useState<string>("1")
     const [leftPeriodName, setLeftPeriodName] = useState<string>("30分钟线")
-    const [testPeriodName, setTestPeriosName] = useState<string>('5Min')
     const [middlePeriodName, setMiddlePeriodName] = useState<string>("5分钟线")
     const [rightPeriodName, setRightPeriodName] = useState<string>("1分钟线")
     const dispatch = useDispatch();
@@ -516,10 +515,6 @@ export const ThreeStockChart: React.FC = () => {
         items: menuItems,
         onClick: handleLeftMenuClick,
     };
-    const testMenuProps = {
-        items: [{label: '间隔1分钟', key: '1Min'},{label: '间隔5分钟', key: '5Min'},{label: '间隔30分钟', key:'30Min'},{label: '间隔1天',key: '1Day'}],
-        onClick: handleTestMenuClick,
-    };
     const middleMenuProps = {
         items: menuItems,
         onClick: handleMiddleMenuClick,
@@ -662,16 +657,7 @@ export const ThreeStockChart: React.FC = () => {
         const name = getPeriodName(e.key)
         setLeftPeriodName(name)
     };
-    function handleTestMenuClick(e) {
-        setTestPeriosName(e.key)
-    };
-    const handleTestClick = () => {
-        let rightEndStr = rightEndTime;
-        const startStr = rightStartStr;
-        let newEndStr = getNextTime(rightEndTime, testPeriodName)
-        setRightEndTime(newEndStr)
-        setRightDateRange([dayjs(startStr), dayjs(newEndStr)])
-    };
+    
     function handleMiddleMenuClick(e) {
         setMiddlePeriod(genPeriodUrlKey(e.key))
         const name = getPeriodName(e.key)
@@ -801,10 +787,6 @@ export const ThreeStockChart: React.FC = () => {
             <Button type="text" onClick={handleBuySellClick} style={buysellStyle}>买卖点</Button>
             {/* <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button> */}
             <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>
-            <Button type="text" onClick={handleTestClick} style={{color: "#CC9966",marginLeft: 120, width: 50}}>测试</Button> 
-            <Dropdown.Button menu={testMenuProps} onClick={handleTestMenuClick} className={styles.searchMenu}>
-               {testPeriodName}
-            </Dropdown.Button>
         </div> 
         <div>
             <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
