@@ -14,6 +14,7 @@ export const UPDATE_PRICE_TIMER_FLAG = "update_price_timer_flag"
 export const CHANGE_CODE_LIST = "change_code_list"
 export const LOAD_CODE_NAME_DIC = "load_code_name_dic"
 export const SET_IS_MOBILE = "set_is_mobile"
+export const SET_IS_SMALL_PC = "set_is_small_pc"
 export const CHANGE_LABELS = "change_labels"
 
 export interface DataType {
@@ -79,6 +80,10 @@ export interface setIsMobileAction {
     type: typeof SET_IS_MOBILE;
     payload: boolean;
 }
+export interface setIsSmallPCAction {
+    type: typeof SET_IS_SMALL_PC;
+    payload: boolean;
+}
 export interface changeLabelsAction {
     type: typeof CHANGE_LABELS;
     payload: any[];
@@ -87,7 +92,7 @@ export interface changeLabelsAction {
 export type StockInfoChangeAction = PeriodChangeAction | CodeChangeAction | MACDChangeValue |
  TimeChangeAction | LabelChangeAction | CenterChangeAction | BiChangeAction | MACDChangeAction
   | UpdatePrice | UpdatePriceTimer | UpdatePriceTimerFlag | ChangeCodeListAction | LoadCodeNameDicAction |
-   setIsMobileAction | changeLabelsAction;
+   setIsMobileAction | changeLabelsAction | setIsSmallPCAction;
 
 
 export const changeCodeListActionCreator = (list: DataType[]): StockInfoChangeAction => {
@@ -112,6 +117,12 @@ export const setIsMobileCreator = (isMobile: boolean): setIsMobileAction => {
     return {
         type: SET_IS_MOBILE,
         payload: isMobile
+    }
+}
+export const setIsSmallPCCreator = (isSmallPC: boolean): setIsSmallPCAction => {
+    return {
+        type: SET_IS_SMALL_PC,
+        payload: isSmallPC
     }
 }
 export const changePeriodActionCreator = (period:  "d" | "w" | "1min" | "5min" | "60min" | "30min" | "15min"): StockInfoChangeAction => {

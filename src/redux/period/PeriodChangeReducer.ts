@@ -1,6 +1,6 @@
 import { act } from "react";
 import { updateLanguageServiceSourceFile } from "typescript";
-import { CHANGE_BI_BUTTON, CHANGE_CENTER_BUTTON, CHANGE_CODE, CHANGE_CODE_LIST, CHANGE_LABEL_BUTTON, CHANGE_LABELS, CHANGE_MACD_BUTTON, CHANGE_MACD_VALUE, CHANGE_PERIOD, CHANGE_TIME, DataType, LOAD_CODE_NAME_DIC, PeriodChangeAction, SET_IS_MOBILE, StockInfoChangeAction, UPDATE_PRICE, UPDATE_PRICE_TIMER, UPDATE_PRICE_TIMER_FLAG} from "./PeriodChangeAction";
+import { CHANGE_BI_BUTTON, CHANGE_CENTER_BUTTON, CHANGE_CODE, CHANGE_CODE_LIST, CHANGE_LABEL_BUTTON, CHANGE_LABELS, CHANGE_MACD_BUTTON, CHANGE_MACD_VALUE, CHANGE_PERIOD, CHANGE_TIME, DataType, LOAD_CODE_NAME_DIC, PeriodChangeAction, SET_IS_MOBILE, SET_IS_SMALL_PC, StockInfoChangeAction, UPDATE_PRICE, UPDATE_PRICE_TIMER, UPDATE_PRICE_TIMER_FLAG} from "./PeriodChangeAction";
 import Papa from 'papaparse';
 import { getCurrentDateFormatted } from "../../components/chart/StockChart";
 
@@ -21,6 +21,7 @@ export interface PeriodState {
     codeList: DataType[];
     codeNameDic: {};
     isMobile: boolean;
+    isSmallPC: boolean
     labels: any[];
 }
 //按1一个月算时间
@@ -45,6 +46,7 @@ const defaultState: PeriodState = {
     codeList: [],
     codeNameDic:{},
     isMobile: false,
+    isSmallPC: false,
     labels: []
 }
 
@@ -78,6 +80,8 @@ export default (state = defaultState, action: StockInfoChangeAction) => {
             return {...state, codeNameDic: action.payload}
         case SET_IS_MOBILE:
             return {...state, isMobile: action.payload}
+        case SET_IS_SMALL_PC:
+            return {...state, isSmallPC: action.payload}
         case CHANGE_LABELS:
             return {...state, labels: action.payload}
         default:

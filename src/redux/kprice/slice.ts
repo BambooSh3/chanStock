@@ -389,22 +389,22 @@ function priceAroundCenter(center: ChanCenterItem, price: number): boolean {
 function bottomTurningPoint(prePointIndex: number, pointIndex: number, dif: MAItem[], macd: MAItem[]): boolean {
     let res = false;
     if(dif[pointIndex].close > dif[prePointIndex].close) {
-        console.log('底背离dif')
+        // console.log('底背离dif')
         res = true
     }
     let preArea = findMACDArea(macd, prePointIndex)
     let curArea = findMACDArea(macd, pointIndex)
     if (preArea!=null && curArea != null) {
         if(preArea < 0 && curArea < 0 && Math.abs(preArea) - Math.abs(curArea) > 0.001) {
-            console.log('底背离，绿色macd面积变小')
+            // console.log('底背离，绿色macd面积变小')
             res = true
         }
         if(preArea > 0 && curArea > 0 && Math.abs(curArea) - Math.abs(preArea) > 0.001) {
-            console.log('底背离，红色macd面积变大')
+            // console.log('底背离，红色macd面积变大')
             res = true
         }
         if(preArea < 0 && curArea > 0) {
-            console.log('底背离，macd绿转红')
+            // console.log('底背离，macd绿转红')
             res = true
         }
     }
@@ -414,22 +414,22 @@ function bottomTurningPoint(prePointIndex: number, pointIndex: number, dif: MAIt
 function topTurningPoint(prePointIndex: number, pointIndex: number, dif: MAItem[], macd: MAItem[]): boolean {
     let res = false;
     if(dif[pointIndex].close < dif[prePointIndex].close) {
-        console.log('顶背离dif')
+        // console.log('顶背离dif')
         res = true
     }
     let preArea = findMACDArea(macd, prePointIndex)
     let curArea = findMACDArea(macd, pointIndex)
     if (preArea!=null && curArea != null) {
         if(preArea > 0 && curArea > 0 && Math.abs(preArea) - Math.abs(curArea) > 0.001) {
-            console.log('顶背离，红色macd面积变小', preArea, curArea)
+            // console.log('顶背离，红色macd面积变小', preArea, curArea)
             res = true
         }
         if(preArea > 0 && curArea < 0) {
-            console.log('顶背离，macd面积红转绿', preArea, curArea)
+            // console.log('顶背离，macd面积红转绿', preArea, curArea)
             res = true
         }
         if(preArea < 0 && curArea < 0 && Math.abs(curArea) - Math.abs(preArea) > 0.001) {
-            console.log('顶背离，绿色macd面积变大', preArea, curArea)
+            // console.log('顶背离，绿色macd面积变大', preArea, curArea)
             res = true
         }
     } 

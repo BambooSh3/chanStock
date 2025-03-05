@@ -20,6 +20,7 @@ import { debounce } from 'lodash'
 import HighchartsMore from 'highcharts/highcharts-more';
 import Annotations from 'highcharts/modules/annotations';
 import { Howl } from 'howler';
+import { Radio } from 'antd';
 // 加载模块
 HighchartsMore(Highcharts);
 Annotations(Highcharts);
@@ -43,6 +44,8 @@ export const ThreeStockChart: React.FC = () => {
     const updaterTimerRef = useRef(0);
     updaterTimerRef.current = updaterTimer
     const [updaterTimerFlag,setUpdaterTimerFlag] = useState<boolean>(false)
+    const isMobile = useSelector((state) => state.periodChange.isMobile);
+    const isSmallPC = useSelector((state) => state.periodChange.isSmallPC);  
     
     const biStyle = biEnable ? {color:"#FF6A6A"} : {color:"gray"};
     const centerStyle = centerEnable ? {color: "#FF6A6A"} : {color: "gray"};
@@ -50,6 +53,7 @@ export const ThreeStockChart: React.FC = () => {
     const macdStyle = macdEnable ? {color:"#FF6A6A"} : {color:"gray"};
     const markStyle = markEnable ? {color:"#FF6A6A"} : {color:"gray"}; 
     const buysellStyle = buySellEnable ? {color:"#FF6A6A"} : {color:"gray"}; 
+    const maFontSize = isMobile? "10px" : "14px"
     let refreshColor = updaterTimerFlag ? "#FF0000" : "#1E90FF";
     const [leftRangeName, setLeftRangeName] = useState<string>("一个月");
     const [middleRangeName, setMiddleRangeName] = useState<string>("七天");
@@ -117,21 +121,39 @@ export const ThreeStockChart: React.FC = () => {
     const [capital, setCapital] = useState<CapitalItem>({today: 0, threeDay: 0, fiveDay: 0, todayStr: '-', threeDayStr: '-', fiveDayStr: '-'})
     const [capitalColor, setCapitalColor] = useState<[string, string, string]>(['#FF0000','#FF0000','FF0000'])
     const [dayPrice, setDayPrice] = useState<DayPriceItem>({price: 0, rate: '0%', color: '#FF0000'})
-    const leftHeight: number = window.innerHeight - 230;
+
+    const leftHeight: number = isMobile ? window.innerHeight - 150 : window.innerHeight - 230; 
     const chartStr = `${leftHeight}px`
     const [chartHeight, setChartHeight] = useState<string>(chartStr)
     const [tipsText, setTipsText] = useState<string>("Tips:暂无买卖建议")
     const [tipsColor, setTipsColor] = useState<string>("#FF0000")
     const [openVoice, setOpenVoice] = useState<boolean>(false)
+    let defaultMode:"one"|"two"|"three" = "three"
+    let defaultSize = 8
+    if (isMobile) {
+        defaultMode = "one"
+        defaultSize = 24
+    } else if (isSmallPC) {
+        defaultMode = "two"
+        defaultSize = 10
+    }
+    const [viewMode, setViewMode] = useState<"one"|"two"|"three">(defaultMode)
+    const [spanSize, setSpanSize] = useState<number>(defaultSize)
 
     useEffect(() => {
         setChartHeight(chartStr)
     }, []);
     const fetchAllData = () => {
-        console.log('refresh three chart')
-        fetchKPrice(code, "left")
-        fetchKPrice(code, "middle")
-        fetchKPrice(code, "right")
+        if(viewMode == "three") {
+            fetchKPrice(code, "left")
+            fetchKPrice(code, "middle")
+            fetchKPrice(code, "right")
+        } else if (viewMode == 'two') {
+            fetchKPrice(code, "left")
+            fetchKPrice(code, "middle")
+        } else if (viewMode == 'one') {
+            fetchKPrice(code, "left")
+        }
         fetchBaseInfo(code)
         fetchDailyInfo(code)
     }
@@ -146,17 +168,6 @@ export const ThreeStockChart: React.FC = () => {
             return true
         }
         return false
-    }
-    function formatDateToYyyyHhMm(): string {
-        const currentDate = new Date();
-        // 获取年份
-        const year = currentDate.getFullYear();
-        // 获取小时（不足两位时前面补 0）
-        const hours = String(currentDate.getHours()).padStart(2, '0');
-        // 获取分钟（不足两位时前面补 0）
-        const minutes = String(currentDate.getMinutes()).padStart(2, '0');
-    
-        return `${year}:${hours}:${minutes}`;
     }
     const checkTips = () => {
         let leftItem = leftBuySellDatas[leftBuySellDatas.length - 1]
@@ -201,7 +212,6 @@ export const ThreeStockChart: React.FC = () => {
 
 
     const fetchLeftData = () => {
-        console.log('refresh left chart')
         fetchKPrice(code, "left")
     }
     const fetchLeftWithDebounce = debounce(fetchLeftData, 200) 
@@ -210,7 +220,6 @@ export const ThreeStockChart: React.FC = () => {
     }, [leftStartTime, leftEndTime, leftPeriod, leftMacdValue]); 
 
     const fetchMiddleData = () => {
-        console.log('refresh middle chart')
         fetchKPrice(code, "middle")
     }
     const fetchMiddleWithDebounce = debounce(fetchMiddleData, 200) 
@@ -220,7 +229,6 @@ export const ThreeStockChart: React.FC = () => {
     }, [middleStartTime, middleEndTime, middlePeriod, middleMacdValue]); 
 
     const fetchRightData = () => {
-        console.log('refresh right chart')
         fetchKPrice(code, "right")
     }
     const fetchRightWithDebounce = debounce(fetchRightData, 200) 
@@ -645,6 +653,17 @@ export const ThreeStockChart: React.FC = () => {
     const handleVoiceClick = () => {
         setOpenVoice(!openVoice)
     };
+    const handleModeChange = (e) => {
+        setViewMode(e.target.value)
+        if(e.target.value == 'one') {
+            let size = isMobile ? 24 : 20;
+            setSpanSize(size)
+        } else if (e.target.value == 'two') {
+            setSpanSize(10)
+        } else if (e.target.value == 'three') {
+            setSpanSize(8)
+        }
+    };
     const sound = new Howl({
         src: ['/tips.wav']
     });
@@ -864,47 +883,90 @@ export const ThreeStockChart: React.FC = () => {
         return `${nextYear}${nextMonth}${nextDay}${nextHour}${nextMinute}${nextSecond}`;
     };
     return  <div className={styles.content}>
-       <div className={styles.searchContent}>
-            <Typography.Text className={styles.searchLabel}>股票代码</Typography.Text>
-            <Input.Search className={styles.searchInput} placeholder="输入代码" defaultValue={code} onSearch={handleCodeChange}></Input.Search>
-            <Button type="text" onClick={handleMACDClick} style={macdStyle}>MA</Button>
-            <Button type="text" onClick={handleLabelClick} style={labelStyle}>标签</Button>
-            <Button type="text" onClick={handleBiClick} style={biStyle}>笔</Button>
-            <Button type="text" onClick={handleCenterClick} style={centerStyle}>中枢</Button>
-            <Button type="text" onClick={handleMarkClick} style={markStyle}>刻度</Button> 
-            <Button type="text" onClick={handleBuySellClick} style={buysellStyle}>买卖点</Button>
-            {/* <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button> */}
-            <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>
-            <Typography.Text style={{marginLeft: 20, color: tipsColor}}>{tipsText}</Typography.Text>
-            <Button type="text" onClick={handleVoiceClick} style={{marginLeft: 12, color: "#FF0000"}}>{openVoice ? '关提示音':'开提示音'}</Button>
-            {/* <Button type="text" onClick={handleVoiceClick} style={buysellStyle}>测声音</Button> */}
+       <div className={isMobile? styles.searchContentMobile : styles.searchContent}>
+            {
+                isMobile ? <>
+                    <Input.Search className={styles.searchInput} placeholder="输入代码" defaultValue={code} onSearch={handleCodeChange}></Input.Search>
+                    <div className={styles.searchContentMobile}>
+                        <Dropdown.Button menu={leftMenuProps} onClick={handleLeftMenuClick} className={styles.searchMenu}>
+                            {leftPeriodName}
+                        </Dropdown.Button>
+                        <Dropdown.Button menu={leftRangeMenuProps} onClick={handleLeftRangeMenuClick} className={styles.rangeMenu}>
+                            {leftRangeName}
+                        </Dropdown.Button>
+                    </div>
+                </>:<>
+                    <Typography.Text className={styles.searchLabel}>股票代码</Typography.Text>
+                    <Input.Search className={styles.searchInput} placeholder="输入代码" defaultValue={code} onSearch={handleCodeChange}></Input.Search>
+                    <Button type="text" onClick={handleMACDClick} style={macdStyle}>MA</Button>
+                    <Button type="text" onClick={handleLabelClick} style={labelStyle}>标签</Button>
+                    <Button type="text" onClick={handleBiClick} style={biStyle}>笔</Button>
+                    <Button type="text" onClick={handleCenterClick} style={centerStyle}>中枢</Button>
+                    <Button type="text" onClick={handleMarkClick} style={markStyle}>刻度</Button> 
+                    <Button type="text" onClick={handleBuySellClick} style={buysellStyle}>买卖点</Button>
+                    {/* <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button> */}
+                    <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50, marginRight: 20}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>
+                    <Radio.Group value={viewMode} onChange={handleModeChange}>
+                        <Radio value="one">单屏</Radio>
+                        <Radio value="two">双屏</Radio>
+                        <Radio value="three">三屏</Radio>
+                    </Radio.Group>
+                    <Typography.Text style={{marginLeft: 20, color: tipsColor}}>{tipsText}</Typography.Text>
+                    <Button type="text" onClick={handleVoiceClick} style={{marginLeft: 12, color: '#FF0000', marginRight: 12}}>{openVoice ? '关提示音':'开提示音'}</Button>
+                    
+                    {/* <Button type="text" onClick={handleVoiceClick} style={buysellStyle}>测声音</Button> */}
+                </>
+            }
+            
+
         </div> 
         <div>
-            <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
-            <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>涨幅 {dayPrice.rate}</Typography.Text>
-            <Typography.Text style={{marginLeft: 12, color: capitalColor[0]}}>昨日净流入：{capital.todayStr}</Typography.Text>
-            <Typography.Text style={{marginLeft: 12, color: capitalColor[1]}}>3日净流入：{capital.threeDayStr}</Typography.Text>
-            <Typography.Text style={{marginLeft: 12, color: capitalColor[2]}}>5日净流入：{capital.fiveDayStr}</Typography.Text>
+            {
+                isMobile ? <>
+                    <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
+                    <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>涨幅 {dayPrice.rate}</Typography.Text> 
+                    <Button type="text" onClick={handleMACDClick} style={macdStyle}>MA</Button>
+                    <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50, marginRight: 20}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>
+                </>:
+                <>
+                    <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
+                    <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>涨幅 {dayPrice.rate}</Typography.Text>
+                    <Typography.Text style={{marginLeft: 12, color: capitalColor[0]}}>昨日净流入：{capital.todayStr}</Typography.Text>
+                    <Typography.Text style={{marginLeft: 12, color: capitalColor[1]}}>3日净流入：{capital.threeDayStr}</Typography.Text>
+                    <Typography.Text style={{marginLeft: 12, color: capitalColor[2]}}>5日净流入：{capital.fiveDayStr}</Typography.Text>
+                </>
+            }
         </div>
-        <Row className={styles.row}>
-            <Col span={8} className={styles.col}>
-                <div className={styles.searchContent}>
-                    <Dropdown.Button menu={leftMenuProps} onClick={handleLeftMenuClick} className={styles.searchMenu}>
-                        {leftPeriodName}
-                    </Dropdown.Button>
-                    <RangePicker showTime onChange={handleLeftTimeChange} value={leftDateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 8}}></RangePicker>
-                    <Dropdown.Button menu={leftRangeMenuProps} onClick={handleLeftRangeMenuClick} className={styles.rangeMenu}>
-                        {leftRangeName}
-                    </Dropdown.Button>
-                    <InputNumber defaultValue={leftMacdValue} min={0} max={5000} onChange={LeftMACDValueChange} style={{marginLeft: 0, width: 100}}></InputNumber>
-                </div>
-                <div className={styles.maValue}>
-                    <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {leftMa5Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma10Color}}>MA10 {leftMa10Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {leftMa20Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {leftMa90Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {leftMa250Value}</Typography.Text>
-                </div>
+        <Row className={styles.row} justify='center'>
+            <Col span={spanSize} className={viewMode == 'one' ? styles.colNoborder : styles.col}>
+                {
+                    isMobile ? <></>:
+                    <>
+                        <div className={styles.searchContent}>
+                            <Dropdown.Button menu={leftMenuProps} onClick={handleLeftMenuClick} className={styles.searchMenu}>
+                                {leftPeriodName}
+                            </Dropdown.Button>
+                            <RangePicker showTime onChange={handleLeftTimeChange} value={leftDateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 8}}></RangePicker>
+                            <Dropdown.Button menu={leftRangeMenuProps} onClick={handleLeftRangeMenuClick} className={styles.rangeMenu}>
+                                {leftRangeName}
+                            </Dropdown.Button>
+                            <InputNumber defaultValue={leftMacdValue} min={0} max={5000} onChange={LeftMACDValueChange} style={{marginLeft: 0, width: 100}}></InputNumber>
+                        </div>
+                    </>
+                }
+                {
+                    isMobile && !macdEnable ? <></>:
+                    <>
+                    <div className={isMobile ? styles.maValueMobile : styles.maValue}>
+                        <Typography.Text style={{marginLeft: 12, color: ma5Color, fontSize: maFontSize}}>MA5 {leftMa5Value}</Typography.Text>
+                        <Typography.Text style={{marginLeft: 12, color: ma10Color, fontSize: maFontSize}}>MA10 {leftMa10Value}</Typography.Text>
+                        <Typography.Text style={{marginLeft: 12, color: ma20Color, fontSize: maFontSize}}>MA20 {leftMa20Value}</Typography.Text>
+                        <Typography.Text style={{marginLeft: 12, color: ma90Color, fontSize: maFontSize}}>MA90 {leftMa90Value}</Typography.Text>
+                        <Typography.Text style={{marginLeft: 12, color: ma250Color, fontSize: maFontSize}}>MA250 {leftMa250Value}</Typography.Text>
+                    </div>
+                    </>
+                } 
+                
                 <HighchartsReact
                     highcharts={Highcharts}
                     constructorType={'stockChart'}
@@ -912,55 +974,64 @@ export const ThreeStockChart: React.FC = () => {
                 />
                 
             </Col>
-            <Col span={8} className={styles.col}>
-                <div className={styles.searchContent}>
-                    <Dropdown.Button menu={middleMenuProps} onClick={handleMiddleMenuClick} className={styles.searchMenu}>
-                        {middlePeriodName}
-                    </Dropdown.Button>
-                    <RangePicker showTime onChange={handleMiddleTimeChange} value={middleDateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 8}}></RangePicker>
-                    <Dropdown.Button menu={middleRangeMenuProps} onClick={handleMiddleRangeMenuClick} className={styles.rangeMenu}>
-                        {middleRangeName}
-                    </Dropdown.Button>
-                    <InputNumber defaultValue={middleMacdValue} min={0} max={5000} onChange={MiddleMACDValueChange} style={{marginLeft: 0, width: 100}}></InputNumber>
+            {
+                viewMode == 'three' || viewMode == 'two' ? <>
+                    <Col span={spanSize} className={viewMode == 'two'? styles.colNoborder : styles.col}>
+                        <div className={styles.searchContent}>
+                            <Dropdown.Button menu={middleMenuProps} onClick={handleMiddleMenuClick} className={styles.searchMenu}>
+                                {middlePeriodName}
+                            </Dropdown.Button>
+                            <RangePicker showTime onChange={handleMiddleTimeChange} value={middleDateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 8}}></RangePicker>
+                            <Dropdown.Button menu={middleRangeMenuProps} onClick={handleMiddleRangeMenuClick} className={styles.rangeMenu}>
+                                {middleRangeName}
+                            </Dropdown.Button>
+                            <InputNumber defaultValue={middleMacdValue} min={0} max={5000} onChange={MiddleMACDValueChange} style={{marginLeft: 0, width: 100}}></InputNumber>
 
-                </div> 
-                <div className={styles.maValue}>
-                    <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {middleMa5Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma10Color}}>MA10 {middleMa10Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {middleMa20Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {middleMa90Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {middleMa250Value}</Typography.Text>
-                </div>
-                <HighchartsReact
-                    highcharts={Highcharts}
-                    constructorType={'stockChart'}
-                    options={middleOptions}
-                />
-            </Col>
-            <Col span={8} className={styles.col}>
-                <div className={styles.searchContent}>
-                    <Dropdown.Button menu={rightMenuProps} onClick={handleRightMenuClick} className={styles.searchMenu}>
-                        {rightPeriodName}
-                    </Dropdown.Button>
-                    <RangePicker showTime onChange={handleRightTimeChange} value={rightDateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 4, marginLeft:4}}></RangePicker>
-                    <Dropdown.Button menu={rightRangeMenuProps} onClick={handleRightRangeMenuClick} className={styles.rangeMenu}>
-                        {rightRangeName}
-                    </Dropdown.Button>
-                    <InputNumber defaultValue={rightMacdValue} min={0} max={5000} onChange={RightMACDValueChange} style={{marginLeft: 0, width: 80}}></InputNumber>
-                </div> 
-                <div className={styles.maValue}>
-                    <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {rightMa5Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma10Color}}>MA10 {rightMa10Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {rightMa20Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {rightMa90Value}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {rightMa250Value}</Typography.Text>
-                </div>
-                <HighchartsReact
-                    highcharts={Highcharts}
-                    constructorType={'stockChart'}
-                    options={rightOptions}
-                />
-            </Col>
+                        </div> 
+                        <div className={styles.maValue}>
+                            <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {middleMa5Value}</Typography.Text>
+                            <Typography.Text style={{marginLeft: 12, color: ma10Color}}>MA10 {middleMa10Value}</Typography.Text>
+                            <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {middleMa20Value}</Typography.Text>
+                            <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {middleMa90Value}</Typography.Text>
+                            <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {middleMa250Value}</Typography.Text>
+                        </div>
+                        <HighchartsReact
+                            highcharts={Highcharts}
+                            constructorType={'stockChart'}
+                            options={middleOptions}
+                        />
+                    </Col>
+                </>:<></>
+            }
+            {
+                viewMode == 'three' ? <>
+                    <Col span={spanSize} className={styles.colNoborder}>
+                        <div className={styles.searchContent}>
+                            <Dropdown.Button menu={rightMenuProps} onClick={handleRightMenuClick} className={styles.searchMenu}>
+                                {rightPeriodName}
+                            </Dropdown.Button>
+                            <RangePicker showTime onChange={handleRightTimeChange} value={rightDateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 4, marginLeft:4}}></RangePicker>
+                            <Dropdown.Button menu={rightRangeMenuProps} onClick={handleRightRangeMenuClick} className={styles.rangeMenu}>
+                                {rightRangeName}
+                            </Dropdown.Button>
+                            <InputNumber defaultValue={rightMacdValue} min={0} max={5000} onChange={RightMACDValueChange} style={{marginLeft: 0, width: 80}}></InputNumber>
+                        </div> 
+                        <div className={styles.maValue}>
+                            <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {rightMa5Value}</Typography.Text>
+                            <Typography.Text style={{marginLeft: 12, color: ma10Color}}>MA10 {rightMa10Value}</Typography.Text>
+                            <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {rightMa20Value}</Typography.Text>
+                            <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {rightMa90Value}</Typography.Text>
+                            <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {rightMa250Value}</Typography.Text>
+                        </div>
+                        <HighchartsReact
+                            highcharts={Highcharts}
+                            constructorType={'stockChart'}
+                            options={rightOptions}
+                        />
+                    </Col>
+                </>:<></>
+            }
+            
         </Row>
 
     </div>

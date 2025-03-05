@@ -13,11 +13,24 @@
     padding-right: 1px;
     /* border: 2px solid rgb(255, 0, 25); */
 }
+.searchContentMobile {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 5px;
+}
 .maValue {
     height: 50px;
     display: flex;
     align-items: center;
     justify-content: left; 
+}
+.maValueMobile {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: left;  
 }
 .MAContent {
     height: 50px;
@@ -56,6 +69,9 @@
 }
 .col{
     border-right: 2px solid lightcoral;
+    height: 100%;
+}
+.colNoborder {
     height: 100%;
 }
 .row{

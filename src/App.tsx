@@ -5,7 +5,7 @@ import { HomePage, ListPage, FilterPage, BlockPage, ThreeChartPage, TestPage} fr
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { useAppDispatch, useSelector } from "./redux/hooks";
 import Papa from 'papaparse';
-import { loadCodeNameDicActionCreator, SET_IS_MOBILE } from "./redux/period/PeriodChangeAction";
+import { loadCodeNameDicActionCreator, SET_IS_MOBILE, SET_IS_SMALL_PC } from "./redux/period/PeriodChangeAction";
 
 function App() {
   const dispatch = useAppDispatch();
@@ -43,7 +43,9 @@ function App() {
   const handleResize = () => {
     const screenWidth = window.innerWidth;
     const mobileThreshold = 768;
+    const smallPC = 1600
     dispatch({ type: SET_IS_MOBILE, payload: screenWidth < mobileThreshold });
+    dispatch({ type: SET_IS_SMALL_PC, payload: screenWidth > mobileThreshold && screenWidth <= smallPC }); 
   };
 
   return (
