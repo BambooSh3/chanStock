@@ -259,7 +259,17 @@ export function genBiPointList(datas: KItem[]) {
             let nextNode = mergeList[i + 1];
             let node = mergeList[i]
             //顶
-            if (node.high >= preNode.high && node.high >= nextNode.high) {
+            let topFlag = node.high >= preNode.high && node.high >= nextNode.high
+            let bottomFlag = node.low <= preNode.low && node.low <= nextNode.low
+            if(resList[resList.length - 1].type == 'bottom' && node.low <= resList[resList.length - 1].point) {
+                resList[resList.length - 1] = { code: node.code, date: node.date, point: node.low, type: "bottom", index: node.index } 
+                continue
+            }
+            if(resList[resList.length - 1].type == 'top' && node.high >= resList[resList.length - 1].point) {
+                resList[resList.length - 1] = { code: node.code, date: node.date, point: node.high, type: "top", index: node.index } 
+                continue
+            } 
+            if (topFlag) {
                 if (node.index - resList[resList.length - 1].index >= 4) {
                     if (resList[resList.length - 1].type == "bottom") {
                         resList.push({ code: node.code, date: node.date, point: node.high, type: "top", index: node.index })
@@ -276,7 +286,7 @@ export function genBiPointList(datas: KItem[]) {
                         }
                     }
                 }
-            } else if (node.low <= preNode.low && node.low <= nextNode.low) {
+            } else if (bottomFlag) {
                 // 底
                 if (node.index - resList[resList.length - 1].index >= 4) {
                     if (resList[resList.length - 1].type == "bottom") {
