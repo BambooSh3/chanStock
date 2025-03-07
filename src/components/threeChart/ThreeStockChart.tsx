@@ -158,11 +158,11 @@ export const ThreeStockChart: React.FC = () => {
         fetchDailyInfo(code)
     }
     const fetchAllWithDebounce = debounce(fetchAllData, 200)
-    const showTips = (item: BuySellV2, itemArray: BuySellV2[]):boolean => {
+    const showTips = (item: BuySellV2,preDate: string, itemArray: BuySellV2[]):boolean => {
         if(itemArray.length == 0) return false
         let tem = itemArray[itemArray.length - 1]
         let temDateTime = new Date(tem.date).getTime()
-        let itemDateTime = new Date(item.date).getTime()
+        let itemDateTime = new Date(preDate).getTime()
         let sameType = item.type.startsWith('buy') && tem.type.startsWith('buy') || item.type.startsWith('sell') && tem.type.startsWith('sell')
         if(sameType && temDateTime >= itemDateTime) {
             return true
@@ -170,13 +170,16 @@ export const ThreeStockChart: React.FC = () => {
         return false
     }
     const checkTips = () => {
+        if(leftBuySellDatas.length < 2 || middleBuySellDatas.length < 2) return;
         let leftItem = leftBuySellDatas[leftBuySellDatas.length - 1]
+        let leftPreDate = leftBuySellDatas[leftBuySellDatas.length - 2].date
         let middleItem = middleBuySellDatas[middleBuySellDatas.length - 1] 
+        let middlePreDate = middleBuySellDatas[middleBuySellDatas.length - 1].date
         // if(leftNeedCheck || middleNeedCheck) {
         //     weakSound.play()
         // }
         if(leftNeedCheck) {
-            if(showTips(leftItem, middleBuySellDatas) || showTips(leftItem, rightBuySellDatas)) {
+            if(showTips(leftItem, leftPreDate,middleBuySellDatas) || showTips(leftItem, leftPreDate,rightBuySellDatas)) {
                 let text = "买卖建议：30分钟级别，" + leftItem.date + ':' + leftItem.type
                 setTipsText(text)
                 if(openVoice) {
@@ -189,7 +192,7 @@ export const ThreeStockChart: React.FC = () => {
                 }
             }
         } else if (middleNeedCheck) {
-            if(showTips(middleItem, rightBuySellDatas)) {
+            if(showTips(middleItem, middlePreDate,rightBuySellDatas)) {
                 let text = "买卖建议：5分钟级别，" + middleItem.date + ':' + middleItem.type
                 setTipsText(text)
                 if(openVoice) {

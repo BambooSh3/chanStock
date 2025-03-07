@@ -344,6 +344,39 @@ function findMACDArea(macd:MAItem[], index: number): null | number {
     } 
     return sum
 }
+function findMACDSmallArea(macd: MAItem[], index: number): null | number {
+    if(index < 0 || index >= macd.length) {
+        return null
+    }
+    const flag = macd[index].close >= 0 
+    let q = index;
+    while(q+1<=macd.length - 1 && (macd[q+1].close >= 0) == flag && Math.abs(macd[q+1].close) > Math.abs(macd[q].close)) {
+        q++;
+    }
+    if(q == index) {
+        while(q-1>=0 && (macd[q-1].close >= 0) == flag && Math.abs(macd[q-1].close) > Math.abs(macd[q].close)) {
+            q--;
+        } 
+    }
+    //让index的取值为附近最大的
+    index = q;
+    let sum = macd[index].close
+    let p = index-1;
+    let pValue = macd[index].close
+    while(p>=0 && (macd[p].close >= 0) == flag && Math.abs(macd[p].close) <= Math.abs(pValue)) {
+        sum += macd[p].close
+        pValue = macd[p].close
+        p--
+    }
+    p = index + 1
+    pValue = macd[index].close
+    while(p<=macd.length-1 && (macd[p].close >= 0) == flag && Math.abs(macd[p].close) <= Math.abs(pValue) ) {
+        sum += macd[p].close
+        pValue = macd[p].close
+        p++
+    }
+    return sum;
+}
 
 export function findNearCenter(center: ChanCenterItem[], curIndex: number): ChanCenterItem|null {
     let curCenter:ChanCenterItem|null = null;
@@ -407,6 +440,14 @@ function bottomTurningPoint(prePointIndex: number, pointIndex: number, dif: MAIt
             // console.log('底背离，macd绿转红')
             res = true
         }
+        //同一个绿色面积，但是在不断减小的也算
+        if(preArea <0 && curArea < 0 && Math.abs(preArea) - Math.abs(curArea) <= 0.001) {
+            let preSmallArea = findMACDSmallArea(macd, prePointIndex)
+            let curSmallArea = findMACDSmallArea(macd, pointIndex)
+            if (preSmallArea!=null && curSmallArea != null && Math.abs(preSmallArea) - Math.abs(curSmallArea) > 0.001) {
+                res = true
+            }
+        }
     }
     return res;
 }
@@ -432,6 +473,14 @@ function topTurningPoint(prePointIndex: number, pointIndex: number, dif: MAItem[
             // console.log('顶背离，绿色macd面积变大', preArea, curArea)
             res = true
         }
+        //同一个红色面积，但是在不断减小的也算
+        if(preArea >0 && curArea > 0 && Math.abs(preArea) - Math.abs(curArea) <= 0.001) {
+            let preSmallArea = findMACDSmallArea(macd, prePointIndex)
+            let curSmallArea = findMACDSmallArea(macd, pointIndex)
+            if (preSmallArea!=null && curSmallArea != null && Math.abs(preSmallArea) - Math.abs(curSmallArea) > 0.001) {
+                res = true
+            }
+        }
     } 
     return res;
 }
@@ -448,9 +497,11 @@ export function genBuySellPointV2(
         const lastKItem = kItems[kItems.length - 1]
         const lastCenter = center[center.length - 1]
         
+        
         //对于间隔>=30分钟的k线，增加一种判断条件，即point和point之间的判断
         let pointJudge = false
         let judgeLast = false  //是否已经识别了买卖点
+
         if(kItems.length > 1) {
             let oneTime = new Date(kItems[0].date).getTime()
             let twoTime = new Date(kItems[1].date).getTime()
@@ -458,6 +509,8 @@ export function genBuySellPointV2(
             const differenceInMinutes = differenceInMilliseconds / (1000 * 60);
             pointJudge = differenceInMinutes >= 5
         }
+        const tolerance = pointJudge ? 1.005 : 1.0005 
+        const macdTolerance = 0.001
         for(let i=0;i<bi.length;i++) {
             let point = bi[i];
             let nearCenter = findNearCenter(center, point.index);
@@ -473,7 +526,7 @@ export function genBuySellPointV2(
             if (point.type == 'bottom') {
                 let flag1 = aroundCenter 
                 let flag2 = kItems[prePoint.index].low > kItems[point.index].low
-                let flag3 = pointJudge && kItems[prePoint.index].low * 1.005 > kItems[point.index].low
+                let flag3 = pointJudge && kItems[prePoint.index].low * tolerance > kItems[point.index].low
                 let stillGoDown = macd[point.index - 1].close > macd[point.index].close
                 let pushRes = false
                 if(bottomTurningPoint(prePoint.index, point.index, dif, macd) && (flag2 || flag3)) {
@@ -488,10 +541,10 @@ export function genBuySellPointV2(
                         pushRes = true
                     }
                 }
-                if (!pushRes && preprePoint != null && preprePoint.point < point.point * 1.005) {
+                if (!pushRes && preprePoint != null && preprePoint.point < point.point * tolerance) {
                     //这种是强势上涨，下跌的位置依然高于上一次上涨的位置
-                    let beginGoUp =  (macd[point.index].close) - macd[point.index - 1].close > 0.001 &&
-                      dif[point.index].close - dif[point.index - 1].close > 0.001
+                    let beginGoUp =  (macd[point.index].close) - macd[point.index - 1].close > macdTolerance &&
+                      dif[point.index].close - dif[point.index - 1].close > macdTolerance
                     if(lastKItem.index != point.index || (lastKItem.index == point.index && beginGoUp)) {
                         if(lastKItem.index == point.index){
                             judgeLast = true
@@ -503,7 +556,7 @@ export function genBuySellPointV2(
             } else {
                 let flag1 = aroundCenter 
                 let flag2 = kItems[prePoint.index].high < kItems[point.index].high
-                let flag3 = pointJudge && kItems[prePoint.index].high < kItems[point.index].high * 1.005
+                let flag3 = pointJudge && kItems[prePoint.index].high < kItems[point.index].high * tolerance
                 let stillGoUp = macd[point.index - 1].close < macd[point.index].close
                 let pushRes = false
                 if(topTurningPoint(prePoint.index, point.index, dif, macd) && (flag2 || flag3)) {
@@ -517,10 +570,10 @@ export function genBuySellPointV2(
                         pushRes = true
                     }
                 } 
-                if (!pushRes && preprePoint != null && preprePoint.point * 1.005 > point.point) {
+                if (!pushRes && preprePoint != null && preprePoint.point * tolerance > point.point) {
                     //这种是强势下跌，上涨的位置依然低于上一次下跌的位置
-                    let beginGoDown =  (macd[point.index - 1].close) - macd[point.index].close > 0.001 &&
-                      dif[point.index - 1].close - dif[point.index].close > 0.001
+                    let beginGoDown =  (macd[point.index - 1].close) - macd[point.index].close > macdTolerance &&
+                      dif[point.index - 1].close - dif[point.index].close > macdTolerance
                     if(lastKItem.index != point.index || (lastKItem.index == point.index && beginGoDown)) {
                         if(lastKItem.index == point.index){
                             judgeLast = true

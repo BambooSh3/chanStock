@@ -187,7 +187,7 @@ export function parseBuySellPointLabelV2(data: BuySellV2[]) {
             borderColor: color,
             borderWidth: 1,
             style: {
-                fontSize: '8px',
+                fontSize: '7px',
                 fontColor: color
             },
             y: offsetY
