@@ -88,7 +88,7 @@ interface PriceState {
     maData5: MAItem[];
     maData10: MAItem[];
     maData20: MAItem[];
-    maData90: MAItem[];
+    maData120: MAItem[];
     maData250: MAItem[];
     macd: MAItem[];
     macdDif: MAItem[];
@@ -106,7 +106,7 @@ const defaultState: PriceState = {
     maData5: [],
     maData10: [],
     maData20: [],
-    maData90: [],
+    maData120: [],
     maData250: [],
     macd: [],
     macdDif: [],
@@ -1131,7 +1131,7 @@ export const kPriceSlice = createSlice({
             state.maData5 = genMAData(state.data, 5);
             state.maData10 = genMAData(state.data, 10);
             state.maData20 = genMAData(state.data, 20);
-            state.maData90 = genMAData(state.data, 90);
+            state.maData120 = genMAData(state.data, 120);
             state.maData250 = genMAData(state.data, 250);
             let { macd, dif, dea } = genMACDData(state.data);
             state.macd = macd;

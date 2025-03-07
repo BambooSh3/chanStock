@@ -11,7 +11,7 @@ import { changeCodeListActionCreator, loadCodeNameDicActionCreator } from "../..
 
 export const ListPage: React.FC = () => {
     const dispatch = useAppDispatch();
-    const { data, maData5, maData10, maData20, maData90, maData250, macd, macdDif, macdDEA,
+    const { data, maData5, maData10, maData20, maData120, maData250, macd, macdDif, macdDEA,
         chanBi, chanCenter, buySellPoints,loading, error } = useSelector((state) => state.kPrice);
     const period = useSelector((state) => state.periodChange.period);
     const periodName = getPeriodName(period) 
@@ -85,7 +85,7 @@ export const ListPage: React.FC = () => {
             <Col span={20}>
                 <div className={styles.right}>
                     <StockChart title={title} data={data}
-                    maData10={maData10} maData20={maData20} maData90={maData90}
+                    maData10={maData10} maData20={maData20} maData120={maData120}
                     maData5={maData5} maData250={maData250}
                     macd={macd} macdDEA={macdDEA} macdDif={macdDif}
                     chanBi={chanBi} chanCenter={chanCenter} buySellPoints={buySellPoints}

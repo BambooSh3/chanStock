@@ -32,7 +32,7 @@ interface Props {
     maData5: MAItem[];
     maData10: MAItem[];
     maData20: MAItem[];
-    maData90: MAItem[];
+    maData120: MAItem[];
     maData250: MAItem[];
     macd: MAItem[];
     macdDif: MAItem[];
@@ -431,7 +431,7 @@ export const StockChartTest: React.FC<Props> = (props) => {
     const maData250 = macdEnable ? parseMaData(props.maData250) : [];
     const maData10 = macdEnable ? parseMaData(props.maData10) : [];
     const maData20 = macdEnable ? parseMaData(props.maData20) : [];
-    const maData90 = macdEnable ? parseMaData(props.maData90) : [];
+    const maData120 = macdEnable ? parseMaData(props.maData120) : [];
     const { chartDataUp, chartDataDown } = parseVolData(props.data);
     const { chartMACD_RED, chartMACD_GREEN, chartDIF, chartDEA, max, min } = parseMACD(props.macd, props.macdDif, props.macdDEA);
     const [macdValue, setMACDValue] = useState<number>(0)
@@ -443,13 +443,13 @@ export const StockChartTest: React.FC<Props> = (props) => {
     const ma5Color = "#FAD700"
     const ma10Color = "#40E0CD"
     const ma20Color = "#0000FF"
-    const ma90Color = "#A52A2A"
+    const ma120Color = "#A52A2A"
     const ma250Color = "#EE82EE"
     const maFontSize = isMobile? "10px" : "14px"
     const ma5Value = props.maData5.length > 0 ? props.maData5[props.maData5.length-1].close : "0";
     const ma10Value = props.maData10.length > 0 ? props.maData10[props.maData10.length-1].close : "0";
     const ma20Value = props.maData20.length > 0 ? props.maData20[props.maData20.length-1].close : "0";
-    const ma90Value = props.maData90.length > 0 ? props.maData90[props.maData90.length-1].close : "0";
+    const ma120Value = props.maData120.length > 0 ? props.maData120[props.maData120.length-1].close : "0";
     const ma250Value = props.maData250.length > 0 ? props.maData250[props.maData250.length-1].close : "0";
     const curValue = props.data.length > 0 ? props.data[props.data.length-1].close : "0";
     const curRange = props.data.length > 0 ? props.data[props.data.length-1].range + '%' : "0%";
@@ -566,12 +566,12 @@ export const StockChartTest: React.FC<Props> = (props) => {
         }
             , {
             type: 'line',
-            name: '移动平均线-MA90',
-            data: maData90,
+            name: '移动平均线-MA120',
+            data: maData120,
             tooltip: {
                 valueDecimals: 2
             },
-            color: ma90Color
+            color: ma120Color
         }
             , {
             type: 'line',

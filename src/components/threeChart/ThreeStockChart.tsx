@@ -90,24 +90,24 @@ export const ThreeStockChart: React.FC = () => {
     const ma5Color = "#FAD700"
     const ma10Color = "#40E0CD"
     const ma20Color = "#0000FF"
-    const ma90Color = "#A52A2A"
+    const ma120Color = "#A52A2A"
     const ma250Color = "#EE82EE"
     const [middleMa5Value, setMiddleMa5Value] = useState<number>(0)
     const [middleMa10Value, setMiddleMa10Value] = useState<number>(0)
     const [middleMa20Value, setMiddleMa20Value] = useState<number>(0)
-    const [middleMa90Value, setMiddleMa90Value] = useState<number>(0) 
+    const [middleMa120Value, setMiddleMa120Value] = useState<number>(0) 
     const [middleMa250Value, setMiddleMa250Value] = useState<number>(0) 
 
     const [leftMa5Value, setLeftMa5Value] = useState<number>(0)
     const [leftMa10Value, setLeftMa10Value] = useState<number>(0)
     const [leftMa20Value, setLeftMa20Value] = useState<number>(0)
-    const [leftMa90Value, setLeftMa90Value] = useState<number>(0) 
+    const [leftMa120Value, setLeftMa120Value] = useState<number>(0) 
     const [leftMa250Value, setLeftMa250Value] = useState<number>(0)  
 
     const [rightMa5Value, setRightMa5Value] = useState<number>(0)
     const [rightMa10Value, setRightMa10Value] = useState<number>(0)
     const [rightMa20Value, setRightMa20Value] = useState<number>(0)
-    const [rightMa90Value, setRightMa90Value] = useState<number>(0) 
+    const [rightMa120Value, setRightMa120Value] = useState<number>(0) 
     const [rightMa250Value, setRightMa250Value] = useState<number>(0) 
     const [leftBuySellDatas, setLeftBuySellDatas] = useState<BuySellV2[]>([])
     const [leftNeedCheck, setLeftNeedCheck] = useState<boolean>(false)
@@ -312,32 +312,32 @@ export const ThreeStockChart: React.FC = () => {
         const ma5 = genMAData(priceList, 5)
         const ma10 = genMAData(priceList, 10)
         const ma20 = genMAData(priceList, 20)
-        const ma90  = genMAData(priceList, 90)
+        const ma120  = genMAData(priceList, 120)
         const ma250 = genMAData(priceList, 250)
         const ma_5 = macdEnable ?  ma5: [];
         const ma_10 = macdEnable ?  ma10: [];
         const ma_20 = macdEnable ?  ma20: [];
-        const ma_90 = macdEnable ?  ma90 : []; 
+        const ma_120 = macdEnable ?  ma120 : []; 
         const ma_250 = macdEnable ?  ma250: [];
         let macdValue = leftMacdValue
         if (mode == "left") {
             if (ma5.length > 0) setLeftMa5Value(ma5[ma5.length - 1].close);
             if (ma10.length > 0) setLeftMa10Value(ma10[ma10.length - 1].close);
             if (ma20.length > 0) setLeftMa20Value(ma20[ma20.length - 1].close);
-            if (ma90.length > 0) setLeftMa90Value(ma90[ma90.length - 1].close);
+            if (ma120.length > 0) setLeftMa120Value(ma120[ma120.length - 1].close);
             if (ma250.length > 0) setLeftMa250Value(ma250[ma250.length - 1].close);
         } else if (mode == 'middle') {
             if (ma5.length > 0) setMiddleMa5Value(ma5[ma5.length - 1].close);
             if (ma10.length > 0) setMiddleMa10Value(ma10[ma10.length - 1].close);
             if (ma20.length > 0) setMiddleMa20Value(ma20[ma20.length - 1].close);
-            if (ma90.length > 0) setMiddleMa90Value(ma90[ma90.length - 1].close);
+            if (ma120.length > 0) setMiddleMa120Value(ma120[ma120.length - 1].close);
             if (ma250.length > 0) setMiddleMa250Value(ma250[ma250.length - 1].close);
             macdValue = middleMacdValue
         } else if (mode == 'right') {
             if (ma5.length > 0) setRightMa5Value(ma5[ma5.length - 1].close);
             if (ma10.length > 0) setRightMa10Value(ma10[ma10.length - 1].close);
             if (ma20.length > 0) setRightMa20Value(ma20[ma20.length - 1].close);
-            if (ma90.length > 0) setRightMa90Value(ma90[ma90.length - 1].close);
+            if (ma120.length > 0) setRightMa120Value(ma120[ma120.length - 1].close);
             if (ma250.length > 0) setRightMa250Value(ma250[ma250.length - 1].close);
             macdValue = rightMacdValue
         }
@@ -353,7 +353,7 @@ export const ThreeStockChart: React.FC = () => {
         const maData250 = macdEnable ? parseMaData(ma_250) : [];
         const maData10 = macdEnable ? parseMaData(ma_10) : [];
         const maData20 = macdEnable ? parseMaData(ma_20) : [];
-        const maData90 = macdEnable ? parseMaData(ma_90) : [];
+        const maData120 = macdEnable ? parseMaData(ma_120) : [];
         const { chartDataUp, chartDataDown } = parseVolData(priceList);
         const { chartMACD_RED, chartMACD_GREEN, chartDIF, chartDEA, max, min } = parseMACD(macd, macd_dif, macd_dea);
         let defaultMACDValue = Math.ceil(Math.max(Math.abs(max*100), Math.abs(min*100))/1.5)
@@ -378,7 +378,7 @@ export const ThreeStockChart: React.FC = () => {
         document.title = codeDic[code] != null ? `${codeDic[code]}走势图` : `${code}走势图` 
         const options = genChartDatas(chartHeight,codeName,macdValue,
             trueData, maData5, ma5Color, maData10,ma10Color,
-            maData20,ma20Color,maData90,ma90Color,maData250,ma250Color,
+            maData20,ma20Color,maData120,ma120Color,maData250,ma250Color,
             chartDataUp, chartDataDown, chartMACD_RED,
             chartMACD_GREEN,chartDIF,chartDEA,chanBi,centerShapes,labels,markValues)
         let needCheck = false
@@ -403,7 +403,7 @@ export const ThreeStockChart: React.FC = () => {
     }
     
     const defaultOption = genChartDatas(chartHeight, "", leftMacdValue, 
-        [],[],ma5Color,[],ma10Color,[],ma20Color,[],ma90Color,[],ma250Color,
+        [],[],ma5Color,[],ma10Color,[],ma20Color,[],ma120Color,[],ma250Color,
         [],[],[],[],[],[],[],[],[],parseMarkLine(false))
     const [leftOptions, setLeftOptions] = useState<any>(defaultOption)
     const [middleOptions, setMiddleOptions] = useState<any>(defaultOption)
@@ -411,7 +411,7 @@ export const ThreeStockChart: React.FC = () => {
 
     function genChartDatas(chartHeight, title, macdValue, trueData, 
         maData5, ma5Color, maData10, ma10Color, maData20, ma20Color, 
-        maData90, ma90Color,maData250, ma250Color,chartDataUp, chartDataDown,
+        maData120, ma120Color,maData250, ma250Color,chartDataUp, chartDataDown,
         chartMACD_RED,chartMACD_GREEN,chartDIF, chartDEA,chanBi,centerShapes,labels, markValues) {
         const options = {
             chart: {
@@ -492,12 +492,12 @@ export const ThreeStockChart: React.FC = () => {
             }
                 , {
                 type: 'line',
-                name: '移动平均线-MA90',
-                data: maData90,
+                name: '移动平均线-MA120',
+                data: maData120,
                 tooltip: {
                     valueDecimals: 2
                 },
-                color: ma90Color
+                color: ma120Color
             }
                 , {
                 type: 'line',
@@ -961,7 +961,7 @@ export const ThreeStockChart: React.FC = () => {
                         <Typography.Text style={{marginLeft: 12, color: ma5Color, fontSize: maFontSize}}>MA5 {leftMa5Value}</Typography.Text>
                         <Typography.Text style={{marginLeft: 12, color: ma10Color, fontSize: maFontSize}}>MA10 {leftMa10Value}</Typography.Text>
                         <Typography.Text style={{marginLeft: 12, color: ma20Color, fontSize: maFontSize}}>MA20 {leftMa20Value}</Typography.Text>
-                        <Typography.Text style={{marginLeft: 12, color: ma90Color, fontSize: maFontSize}}>MA90 {leftMa90Value}</Typography.Text>
+                        <Typography.Text style={{marginLeft: 12, color: ma120Color, fontSize: maFontSize}}>MA120 {leftMa120Value}</Typography.Text>
                         <Typography.Text style={{marginLeft: 12, color: ma250Color, fontSize: maFontSize}}>MA250 {leftMa250Value}</Typography.Text>
                     </div>
                     </>
@@ -992,7 +992,7 @@ export const ThreeStockChart: React.FC = () => {
                             <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {middleMa5Value}</Typography.Text>
                             <Typography.Text style={{marginLeft: 12, color: ma10Color}}>MA10 {middleMa10Value}</Typography.Text>
                             <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {middleMa20Value}</Typography.Text>
-                            <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {middleMa90Value}</Typography.Text>
+                            <Typography.Text style={{marginLeft: 12, color: ma120Color}}>MA120 {middleMa120Value}</Typography.Text>
                             <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {middleMa250Value}</Typography.Text>
                         </div>
                         <HighchartsReact
@@ -1020,7 +1020,7 @@ export const ThreeStockChart: React.FC = () => {
                             <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {rightMa5Value}</Typography.Text>
                             <Typography.Text style={{marginLeft: 12, color: ma10Color}}>MA10 {rightMa10Value}</Typography.Text>
                             <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {rightMa20Value}</Typography.Text>
-                            <Typography.Text style={{marginLeft: 12, color: ma90Color}}>MA90 {rightMa90Value}</Typography.Text>
+                            <Typography.Text style={{marginLeft: 12, color: ma120Color}}>MA120 {rightMa120Value}</Typography.Text>
                             <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {rightMa250Value}</Typography.Text>
                         </div>
                         <HighchartsReact
