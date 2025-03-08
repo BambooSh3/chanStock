@@ -7,14 +7,15 @@ import Highcharts, { dateFormat, numberFormat, setOptions } from 'highcharts/hig
 import Typography from "antd/es/typography"
 import React, { useEffect, useRef, useState } from "react"
 import { findRangeName, genPeriodUrlKey, getCurrentDateFormatted,
-     getPeriodName, parseBuySellPointLabel, parseBuySellPointLabelV2, parseChanBi, parseChanBiLabel, parseChanCenter,
+     getNextPeriod,
+     getPeriodName, getRangeTime, parseBuySellPointLabel, parseBuySellPointLabelV2, parseChanBi, parseChanBiLabel, parseChanCenter,
       parseData, parseMACD, parseMaData, parseMarkLine, parseVolData, periodList, rangeList } from "../chart/StockChart"
 import styles from "./ThreeStockChart.module.css"
 import { useSelector } from "../../redux/hooks";
 import { useDispatch } from "react-redux";
 import dayjs, { Dayjs } from "dayjs"
 import { strictEqual } from "assert"
-import { BuySellItem, BuySellV2, capitalInfoUrl, CapitalItem, ChanCenterItem, ChanPointItem, codeMap, dailyPriceUrl, DayPriceItem, genBiPointList, genBuySellPoint, genBuySellPointV2, genCenterList, genKPriceUrl, genMACDData, genMAData, hkCodeMap, KItem, MAItem, parseCapital, parseDailyData, parseDailyPrice, parseMinData } from "../../redux/kprice/slice"
+import { BuySellItem, BuySellV2, capitalInfoUrl, CapitalItem, ChanCenterItem, ChanPointItem, codeMap, dailyPriceUrl, DayPriceItem, genBiPointList, genBuySellPoint, genBuySellPointV2, genCenterList, genKPriceUrl, genMACDData, genMAData, hkCodeMap, KItem, MAItem, parseCapital, parseDailyData, parseDailyPrice, parseMinData, showTips } from "../../redux/kprice/slice"
 import axios from "axios"
 import { debounce } from 'lodash'
 import HighchartsMore from 'highcharts/highcharts-more';
@@ -111,6 +112,9 @@ export const ThreeStockChart: React.FC = () => {
     const [rightMa250Value, setRightMa250Value] = useState<number>(0) 
     const [leftBuySellDatas, setLeftBuySellDatas] = useState<BuySellV2[]>([])
     const [leftNeedCheck, setLeftNeedCheck] = useState<boolean>(false)
+    const [leftKDatas, setLeftKDatas] = useState<KItem[]>([])
+    const [middleKDatas, setMiddleKDatas] = useState<KItem[]>([])
+    const [rightKDatas, setRightKDatas] = useState<KItem[]>([])
     const [middleBuySellDatas, setMiddleBuySellDatas] = useState<BuySellV2[]>([])
     const [middleNeedCheck, setMiddleNeedCheck] = useState<boolean>(false)
     const [rightBuySellDatas, setRightBuySellDatas] = useState<BuySellV2[]>([])
@@ -125,7 +129,7 @@ export const ThreeStockChart: React.FC = () => {
     const leftHeight: number = isMobile ? window.innerHeight - 150 : window.innerHeight - 230; 
     const chartStr = `${leftHeight}px`
     const [chartHeight, setChartHeight] = useState<string>(chartStr)
-    const [tipsText, setTipsText] = useState<string>("Tips:暂无买卖建议")
+    const [tipsText, setTipsText] = useState<string>("暂无买卖建议")
     const [tipsColor, setTipsColor] = useState<string>("#FF0000")
     const [openVoice, setOpenVoice] = useState<boolean>(false)
     let defaultMode:"one"|"two"|"three" = "three"
@@ -152,57 +156,61 @@ export const ThreeStockChart: React.FC = () => {
             fetchKPrice(code, "left")
             fetchKPrice(code, "middle")
         } else if (viewMode == 'one') {
+            let period = getNextPeriod(leftPeriod)
+            let rangeTime = getRangeTime(period)
+            setMiddlePeriod(period)
+            setMiddleStartTime(rangeTime[0])
+            setMiddleEndTime(rangeTime[1])
+            setMiddleDateRange([dayjs(rangeTime[0]), dayjs(rangeTime[1])])
             fetchKPrice(code, "left")
+            fetchKPrice(code, "middle") 
         }
         fetchBaseInfo(code)
         fetchDailyInfo(code)
     }
     const fetchAllWithDebounce = debounce(fetchAllData, 200)
-    const showTips = (item: BuySellV2,preDate: string, itemArray: BuySellV2[]):boolean => {
-        if(itemArray.length == 0) return false
-        let tem = itemArray[itemArray.length - 1]
-        let temDateTime = new Date(tem.date).getTime()
-        let itemDateTime = new Date(preDate).getTime()
-        let sameType = item.type.startsWith('buy') && tem.type.startsWith('buy') || item.type.startsWith('sell') && tem.type.startsWith('sell')
-        if(sameType && temDateTime >= itemDateTime) {
-            return true
-        }
-        return false
-    }
+
+    
     const checkTips = () => {
-        if(leftBuySellDatas.length < 2 || middleBuySellDatas.length < 2) return;
+        if(leftBuySellDatas.length < 1 || middleBuySellDatas.length < 1) return;
         let leftItem = leftBuySellDatas[leftBuySellDatas.length - 1]
-        let leftPreDate = leftBuySellDatas[leftBuySellDatas.length - 2].date
         let middleItem = middleBuySellDatas[middleBuySellDatas.length - 1] 
-        let middlePreDate = middleBuySellDatas[middleBuySellDatas.length - 1].date
-        // if(leftNeedCheck || middleNeedCheck) {
-        //     weakSound.play()
-        // }
         if(leftNeedCheck) {
-            if(showTips(leftItem, leftPreDate,middleBuySellDatas) || showTips(leftItem, leftPreDate,rightBuySellDatas)) {
-                let text = "买卖建议：30分钟级别，" + leftItem.date + ':' + leftItem.type
-                setTipsText(text)
-                if(openVoice) {
-                    sound.play()
-                }
+            if(showTips(leftItem, leftPeriod,middleBuySellDatas) || (viewMode == "three" && showTips(leftItem, leftPeriod,rightBuySellDatas))) {
+                let buyType = ""
                 if(leftItem.type.startsWith('buy')) {
                     setTipsColor('#FF0000')
+                    buyType = "buy"
                 } else {
                     setTipsColor('#008000')
+                    buyType = "sell"
                 }
-            }
-        } else if (middleNeedCheck) {
-            if(showTips(middleItem, middlePreDate,rightBuySellDatas)) {
-                let text = "买卖建议：5分钟级别，" + middleItem.date + ':' + middleItem.type
+                
+                let text = "买卖建议：" + leftPeriodName + leftItem.date + ':' + leftItem.type + ':' + leftItem.price
                 setTipsText(text)
                 if(openVoice) {
                     sound.play()
-                }
+                    console.log('haojin test show voice')
+                } 
+                console.log(text)
+            }
+        } else if (viewMode == 'three' && middleNeedCheck && rightBuySellDatas.length > 0) {
+            if(showTips(middleItem, middlePeriod,rightBuySellDatas)) {
+                let buyType = ""
                 if(middleItem.type.startsWith('buy')) {
                     setTipsColor('#FF0000')
+                    buyType = "buy"
                 } else {
                     setTipsColor('#008000')
+                    buyType = "sell"
                 }
+                let text = "买卖建议：" + middlePeriodName + middleItem.date + ':' + middleItem.type + ":" + middleItem.price
+                setTipsText(text)
+                if(openVoice) {
+                    sound.play()
+                    console.log('haojin test show voice')
+                }
+                console.log(text)
             }
         }
     }
@@ -394,14 +402,17 @@ export const ThreeStockChart: React.FC = () => {
             setLeftBuySellDatas(buySellItems)
             setLeftNeedCheck(needCheck)
             setLeftOptions(options)
+            setLeftKDatas(priceList)
         } else if (mode == "middle") {
             setMiddleBuySellDatas(buySellItems)
             setMiddleNeedCheck(needCheck)
             setMiddleOptions(options)
+            setMiddleKDatas(priceList)
         } else {
             setRightBuySellDatas(buySellItems)
             setRightNeedCheck(needCheck)
             setRightOptions(options)
+            setRightKDatas(priceList)
         }
     }
     
@@ -762,6 +773,7 @@ export const ThreeStockChart: React.FC = () => {
             console.log("invalid date", val);
         }
     };
+    
     function handleLeftMenuClick(e) {
         setLeftPeriod(genPeriodUrlKey(e.key))
         const name = getPeriodName(e.key)
@@ -929,7 +941,12 @@ export const ThreeStockChart: React.FC = () => {
                     <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
                     <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>涨幅 {dayPrice.rate}</Typography.Text> 
                     <Button type="text" onClick={handleMACDClick} style={macdStyle}>MA</Button>
-                    <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50, marginRight: 20}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>
+                    <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50, marginRight: 12}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>
+                    <Button type="text" onClick={handleVoiceClick} style={{ color: '#FF0000'}}>{openVoice ? '关提示音':'开提示音'}</Button>
+                    <div>
+                        <Typography.Text style={{marginLeft: 20, color: tipsColor}}>{tipsText}</Typography.Text>
+                        
+                    </div>
                 </>:
                 <>
                     <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>

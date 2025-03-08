@@ -247,6 +247,49 @@ export function parseChanBiLabel(data: ChanPointItem[]) {
     // console.log('test: ',labels)
     return labels
 }
+export function parseBuySellLines(enable, points:string[]) {
+    let xAxisDic = {type: 'datetime'}
+    let plotLines:any[] = []
+    if (!enable) {
+        xAxisDic['plotLines'] = plotLines
+        return xAxisDic
+    }
+   
+    for (let i=0;i<points.length;i++){
+        let point = points[i]
+        let endStr = removeBrackets(point)
+        let buyType = extractContentInBrackets(point) + ""
+        let utcPoint = dateToUTCNumber(moment(endStr).toDate()) 
+        let colorStr = buyType.startsWith('buy') ? "red" : "green"
+        let itemDic = {
+            color: colorStr,
+            width: 1,
+            value: utcPoint,
+            label: {
+                text: buyType,
+                align: 'right',
+                style: {
+                    color: colorStr
+                }
+            }
+        }
+        plotLines.push(itemDic)
+    }
+    xAxisDic['plotLines'] = plotLines
+    return xAxisDic
+}
+export function removeBrackets(str: string): string {
+    const bracketIndex = str.indexOf('[');
+    if (bracketIndex!== -1) {
+        return str.substring(0, bracketIndex);
+    }
+    return str;
+}
+export function extractContentInBrackets(str: string): string | null {
+    const regex = /\[(.*?)\]/;
+    const match = str.match(regex);
+    return match? match[1] : "";
+}
 export function parseMarkLine(enable) {
     let xAxisDic = {type: 'datetime'}
     let plotLines:any[] = []
@@ -370,6 +413,48 @@ export function genPeriodUrlKey(period: string) {
         return '60'
     }
     return ""
+}
+export function getNextPeriod(period: string) {
+        if(period == 'weekly') {
+            return 'daily'
+        } else if (period == 'daily') {
+            return '30'
+        } else if (period == '30') {
+            return '5'
+        } else if (period == '5') {
+            return '1'
+        } else if (period == '60') {
+            return '5'
+        }
+        return '5'
+}
+export function getRangeTime(period: string) {
+    const daystr = getCurrentDateFormatted(0,0)
+    const threeDaystr = getCurrentDateFormatted(7,0)
+    if(period == 'daily') {
+        const monthstr = getCurrentDateFormatted(90,0)
+        let startStr = monthstr + "090000"
+        let endStr = daystr + "200000" 
+        return [startStr, endStr]
+    } else if (period == '30') {
+        const monthstr = getCurrentDateFormatted(30,0)
+        let startStr = monthstr + "090000"
+        let endStr = daystr + "200000" 
+        return [startStr, endStr]
+    } else if (period == '5') {
+        const threeDaystr = getCurrentDateFormatted(7,0)
+        let startStr = threeDaystr + "090000"
+        let endStr = daystr + "200000"
+        return [startStr, endStr]
+    } else if (period == '1') {
+        const threeDaystr = getCurrentDateFormatted(1,0)
+        let startStr = threeDaystr + "090000"
+        let endStr = daystr + "200000" 
+        return [startStr, endStr]
+    }
+    let startStr = threeDaystr + "090000"
+    let endStr = daystr + "200000" 
+    return [startStr, endStr]
 }
 
 export function findRangeName(key) {
