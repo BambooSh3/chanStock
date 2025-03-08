@@ -28,7 +28,7 @@ Annotations(Highcharts);
 
 const { RangePicker } = DatePicker;
 
-export const ThreeStockChart: React.FC = () => {
+export const ThreeStockChartTest: React.FC = () => {
     const [code, setCode] = useState<string>("000688") 
     const codeDic = useSelector((state) => state.periodChange.codeNameDic);
     const [biEnable,setBiEnable] = useState<boolean>(true) 
@@ -37,9 +37,6 @@ export const ThreeStockChart: React.FC = () => {
     const [labelEnable, setLabelEnable] = useState<boolean>(false)
     const [markEnable, setMarkEnable] = useState<boolean>(false)
     const [macdEnable,setMacdEnable] = useState<boolean>(false)
-    const [leftMacdValue, setLeftMacdValue] = useState<number>(0)
-    const [middleMacdValue, setMiddleMacdValue] = useState<number>(0)
-    const [rightMacdValue, setRightMacdValue] = useState<number>(0)
     const [updaterValue, setUpdaterValue] = useState<number>(0)
     const [updaterTimer, setUpdaterTimer] = useState<number>(0)
     const updaterTimerRef = useRef(0);
@@ -88,28 +85,7 @@ export const ThreeStockChart: React.FC = () => {
     const [middlePeriodName, setMiddlePeriodName] = useState<string>("5分钟线")
     const [rightPeriodName, setRightPeriodName] = useState<string>("1分钟线")
     const dispatch = useDispatch();
-    const ma5Color = "#FAD700"
-    const ma10Color = "#40E0CD"
-    const ma20Color = "#0000FF"
-    const ma120Color = "#A52A2A"
-    const ma250Color = "#EE82EE"
-    const [middleMa5Value, setMiddleMa5Value] = useState<number>(0)
-    const [middleMa10Value, setMiddleMa10Value] = useState<number>(0)
-    const [middleMa20Value, setMiddleMa20Value] = useState<number>(0)
-    const [middleMa120Value, setMiddleMa120Value] = useState<number>(0) 
-    const [middleMa250Value, setMiddleMa250Value] = useState<number>(0) 
-
-    const [leftMa5Value, setLeftMa5Value] = useState<number>(0)
-    const [leftMa10Value, setLeftMa10Value] = useState<number>(0)
-    const [leftMa20Value, setLeftMa20Value] = useState<number>(0)
-    const [leftMa120Value, setLeftMa120Value] = useState<number>(0) 
-    const [leftMa250Value, setLeftMa250Value] = useState<number>(0)  
-
-    const [rightMa5Value, setRightMa5Value] = useState<number>(0)
-    const [rightMa10Value, setRightMa10Value] = useState<number>(0)
-    const [rightMa20Value, setRightMa20Value] = useState<number>(0)
-    const [rightMa120Value, setRightMa120Value] = useState<number>(0) 
-    const [rightMa250Value, setRightMa250Value] = useState<number>(0) 
+   
     const [leftBuySellDatas, setLeftBuySellDatas] = useState<BuySellV2[]>([])
     const [leftNeedCheck, setLeftNeedCheck] = useState<boolean>(false)
     const [leftKDatas, setLeftKDatas] = useState<KItem[]>([])
@@ -132,17 +108,12 @@ export const ThreeStockChart: React.FC = () => {
     const [tipsText, setTipsText] = useState<string>("暂无买卖建议")
     const [tipsColor, setTipsColor] = useState<string>("#FF0000")
     const [openVoice, setOpenVoice] = useState<boolean>(false)
-    let defaultMode:"one"|"two"|"three" = "three"
-    let defaultSize = 8
-    if (isMobile) {
-        defaultMode = "one"
-        defaultSize = 24
-    } else if (isSmallPC) {
-        defaultMode = "two"
-        defaultSize = 10
-    }
+    let defaultMode:"one"|"two"|"three" = "two"
+    let defaultSize = 10 
     const [viewMode, setViewMode] = useState<"one"|"two"|"three">(defaultMode)
     const [spanSize, setSpanSize] = useState<number>(defaultSize)
+    const [step, setStep] = useState<number>(0)
+    const [stepSize, setStepSize] = useState<number>(1)
 
     useEffect(() => {
         setChartHeight(chartStr)
@@ -263,7 +234,7 @@ export const ThreeStockChart: React.FC = () => {
     const fetchLeftWithDebounce = debounce(fetchLeftData, 200) 
     useEffect(() => {
         fetchLeftWithDebounce()
-    }, [leftStartTime, leftEndTime, leftPeriod, leftMacdValue]); 
+    }, [leftStartTime, leftEndTime, leftPeriod ]); 
 
     const fetchMiddleData = () => {
         fetchKPrice(code, "middle")
@@ -272,7 +243,7 @@ export const ThreeStockChart: React.FC = () => {
 
     useEffect(() => {
        fetchMiddleWithDebounce() 
-    }, [middleStartTime, middleEndTime, middlePeriod, middleMacdValue]); 
+    }, [middleStartTime, middleEndTime, middlePeriod]); 
 
     const fetchRightData = () => {
         fetchKPrice(code, "right")
@@ -280,7 +251,7 @@ export const ThreeStockChart: React.FC = () => {
     const fetchRightWithDebounce = debounce(fetchRightData, 200) 
     useEffect(() => {
         fetchRightWithDebounce()
-    }, [rightStartTime, rightEndTime, rightPeriod, rightMacdValue]); 
+    }, [rightStartTime, rightEndTime, rightPeriod]); 
 
     async function fetchBaseInfo(code:string) {
         if (capital.todayStr === '-') {
@@ -301,6 +272,75 @@ export const ThreeStockChart: React.FC = () => {
        let priceItem = parseDailyPrice(data)
        setDayPrice(priceItem)
 
+    }
+    
+    function applyChart(priceList: KItem[], period: string, mode: "left" | "right" | "middle", test: boolean) {
+        const macd_dic = genMACDData(priceList);
+        
+        let macdValue = 0 
+        const macd_dif = macd_dic.dif
+        const macd_dea = macd_dic.dea
+        const macd = macd_dic.macd
+        const bi = biEnable ? genBiPointList(priceList) : [];
+        const center = centerEnable ? genCenterList(bi) : [];
+        const buySellItems = buySellEnable ? genBuySellPointV2(bi, center, priceList, macd_dif, macd_dea, macd) : [];
+        const type = (period == 'weekly' || period == 'daily') ? 'daily' : "min"
+        const trueData = parseData(priceList, type);
+        const { chartDataUp, chartDataDown } = parseVolData(priceList);
+        const { chartMACD_RED, chartMACD_GREEN, chartDIF, chartDEA, max, min } = parseMACD(macd, macd_dif, macd_dea);
+        let defaultMACDValue = Math.ceil(Math.max(Math.abs(max*100), Math.abs(min*100))/1.5)
+        if (macdValue == 0) {
+            macdValue = defaultMACDValue
+        }
+        const chanBi = biEnable ? parseChanBi(bi) : [];
+        const centerShapes =centerEnable ? parseChanCenter(center) : [];
+        const markValues = parseMarkLine(markEnable);
+        let labels =labelEnable ? parseChanBiLabel(bi) : [];
+        const buyselllabels = buySellItems.length>0 ? parseBuySellPointLabelV2(buySellItems):[];
+        labels = labels.concat(buyselllabels)
+        let periodtitle = period
+        if (period == 'weekly') {
+            periodtitle = '周线'
+        } else if (period == 'daily') {
+            periodtitle = '日线'
+        } else {
+            periodtitle = periodtitle + '分钟'
+        }
+        const codeName = codeDic[code] != null ? `${codeDic[code]}--${periodtitle}走势图` : `${code}--${periodtitle}走势图`
+        document.title = codeDic[code] != null ? `${codeDic[code]}走势图` : `${code}走势图` 
+        const options = genChartDatas(chartHeight,codeName,macdValue,
+            trueData, 
+            chartDataUp, chartDataDown, chartMACD_RED,
+            chartMACD_GREEN,chartDIF,chartDEA,chanBi,centerShapes,labels,markValues)
+        let needCheck = false
+        if(buySellItems.length > 0 && priceList.length > 0) {
+            if(buySellItems[buySellItems.length - 1].index + 3 >= priceList[priceList.length - 1].index) {
+                needCheck = true
+            }
+        } 
+        if (mode == "left") {
+            setLeftBuySellDatas(buySellItems)
+            setLeftNeedCheck(needCheck)
+            setLeftOptions(options)
+            if(!test) {
+                setLeftKDatas(priceList)
+            }
+            
+        } else if (mode == "middle") {
+            setMiddleBuySellDatas(buySellItems)
+            setMiddleNeedCheck(needCheck)
+            setMiddleOptions(options)
+            if(!test) {
+                setMiddleKDatas(priceList)
+            }
+        } else {
+            setRightBuySellDatas(buySellItems)
+            setRightNeedCheck(needCheck)
+            setRightOptions(options)
+            if(!test) {
+                setRightKDatas(priceList)
+            }
+        }
     }
 
     async function fetchKPrice(code:string, mode: "left" | "right" | "middle") {
@@ -345,8 +385,6 @@ export const ThreeStockChart: React.FC = () => {
         }
         url = url + `?symbol=${code}&period=${period}&start_date=${start}&end_date=${end}`;
         console.log(url)
-        const analyse_buy_sell = buySellEnable && period === '1' 
-        const test_enable = buySellEnable && period === '30'
         const { data } = await axios.get(url);
         let priceList:KItem[] = []
         if (period == 'daily' || period == 'weekly') {
@@ -354,113 +392,18 @@ export const ThreeStockChart: React.FC = () => {
         } else {
             priceList = parseMinData(data, code);
         }
-        const macd_dic = genMACDData(priceList);
-        const ma5 = genMAData(priceList, 5)
-        const ma10 = genMAData(priceList, 10)
-        const ma20 = genMAData(priceList, 20)
-        const ma120  = genMAData(priceList, 120)
-        const ma250 = genMAData(priceList, 250)
-        const ma_5 = macdEnable ?  ma5: [];
-        const ma_10 = macdEnable ?  ma10: [];
-        const ma_20 = macdEnable ?  ma20: [];
-        const ma_120 = macdEnable ?  ma120 : []; 
-        const ma_250 = macdEnable ?  ma250: [];
-        let macdValue = leftMacdValue
-        if (mode == "left") {
-            if (ma5.length > 0) setLeftMa5Value(ma5[ma5.length - 1].close);
-            if (ma10.length > 0) setLeftMa10Value(ma10[ma10.length - 1].close);
-            if (ma20.length > 0) setLeftMa20Value(ma20[ma20.length - 1].close);
-            if (ma120.length > 0) setLeftMa120Value(ma120[ma120.length - 1].close);
-            if (ma250.length > 0) setLeftMa250Value(ma250[ma250.length - 1].close);
-        } else if (mode == 'middle') {
-            if (ma5.length > 0) setMiddleMa5Value(ma5[ma5.length - 1].close);
-            if (ma10.length > 0) setMiddleMa10Value(ma10[ma10.length - 1].close);
-            if (ma20.length > 0) setMiddleMa20Value(ma20[ma20.length - 1].close);
-            if (ma120.length > 0) setMiddleMa120Value(ma120[ma120.length - 1].close);
-            if (ma250.length > 0) setMiddleMa250Value(ma250[ma250.length - 1].close);
-            macdValue = middleMacdValue
-        } else if (mode == 'right') {
-            if (ma5.length > 0) setRightMa5Value(ma5[ma5.length - 1].close);
-            if (ma10.length > 0) setRightMa10Value(ma10[ma10.length - 1].close);
-            if (ma20.length > 0) setRightMa20Value(ma20[ma20.length - 1].close);
-            if (ma120.length > 0) setRightMa120Value(ma120[ma120.length - 1].close);
-            if (ma250.length > 0) setRightMa250Value(ma250[ma250.length - 1].close);
-            macdValue = rightMacdValue
-        }
-        const macd_dif = macd_dic.dif
-        const macd_dea = macd_dic.dea
-        const macd = macd_dic.macd
-        const bi = biEnable ? genBiPointList(priceList) : [];
-        const center = centerEnable ? genCenterList(bi) : [];
-        const buySellItems = buySellEnable ? genBuySellPointV2(bi, center, priceList, macd_dif, macd_dea, macd) : [];
-        const type = (period == 'weekly' || period == 'daily') ? 'daily' : "min"
-        const trueData = parseData(priceList, type);
-        const maData5 = macdEnable ? parseMaData(ma_5) : [];
-        const maData250 = macdEnable ? parseMaData(ma_250) : [];
-        const maData10 = macdEnable ? parseMaData(ma_10) : [];
-        const maData20 = macdEnable ? parseMaData(ma_20) : [];
-        const maData120 = macdEnable ? parseMaData(ma_120) : [];
-        const { chartDataUp, chartDataDown } = parseVolData(priceList);
-        const { chartMACD_RED, chartMACD_GREEN, chartDIF, chartDEA, max, min } = parseMACD(macd, macd_dif, macd_dea);
-        let defaultMACDValue = Math.ceil(Math.max(Math.abs(max*100), Math.abs(min*100))/1.5)
-        if (macdValue == 0) {
-            macdValue = defaultMACDValue
-        }
-        const chanBi = biEnable ? parseChanBi(bi) : [];
-        const centerShapes =centerEnable ? parseChanCenter(center) : [];
-        const markValues = parseMarkLine(markEnable);
-        let labels =labelEnable ? parseChanBiLabel(bi) : [];
-        const buyselllabels = buySellItems.length>0 ? parseBuySellPointLabelV2(buySellItems):[];
-        labels = labels.concat(buyselllabels)
-        let periodtitle = period
-        if (period == 'weekly') {
-            periodtitle = '周线'
-        } else if (period == 'daily') {
-            periodtitle = '日线'
-        } else {
-            periodtitle = periodtitle + '分钟'
-        }
-        const codeName = codeDic[code] != null ? `${codeDic[code]}--${periodtitle}走势图` : `${code}--${periodtitle}走势图`
-        document.title = codeDic[code] != null ? `${codeDic[code]}走势图` : `${code}走势图` 
-        const options = genChartDatas(chartHeight,codeName,macdValue,
-            trueData, maData5, ma5Color, maData10,ma10Color,
-            maData20,ma20Color,maData120,ma120Color,maData250,ma250Color,
-            chartDataUp, chartDataDown, chartMACD_RED,
-            chartMACD_GREEN,chartDIF,chartDEA,chanBi,centerShapes,labels,markValues)
-        let needCheck = false
-        if(buySellItems.length > 0 && priceList.length > 0) {
-            if(buySellItems[buySellItems.length - 1].index + 3 >= priceList[priceList.length - 1].index) {
-                needCheck = true
-            }
-        } 
-        if (mode == "left") {
-            setLeftBuySellDatas(buySellItems)
-            setLeftNeedCheck(needCheck)
-            setLeftOptions(options)
-            setLeftKDatas(priceList)
-        } else if (mode == "middle") {
-            setMiddleBuySellDatas(buySellItems)
-            setMiddleNeedCheck(needCheck)
-            setMiddleOptions(options)
-            setMiddleKDatas(priceList)
-        } else {
-            setRightBuySellDatas(buySellItems)
-            setRightNeedCheck(needCheck)
-            setRightOptions(options)
-            setRightKDatas(priceList)
-        }
+        applyChart(priceList, period, mode, false)
     }
     
-    const defaultOption = genChartDatas(chartHeight, "", leftMacdValue, 
-        [],[],ma5Color,[],ma10Color,[],ma20Color,[],ma120Color,[],ma250Color,
+    const defaultOption = genChartDatas(chartHeight, "", 0, 
+        [],
         [],[],[],[],[],[],[],[],[],parseMarkLine(false))
     const [leftOptions, setLeftOptions] = useState<any>(defaultOption)
     const [middleOptions, setMiddleOptions] = useState<any>(defaultOption)
     const [rightOptions, setRightOptions] = useState<any>(defaultOption)
 
     function genChartDatas(chartHeight, title, macdValue, trueData, 
-        maData5, ma5Color, maData10, ma10Color, maData20, ma20Color, 
-        maData120, ma120Color,maData250, ma250Color,chartDataUp, chartDataDown,
+        chartDataUp, chartDataDown,
         chartMACD_RED,chartMACD_GREEN,chartDIF, chartDEA,chanBi,centerShapes,labels, markValues) {
         const options = {
             chart: {
@@ -511,51 +454,6 @@ export const ThreeStockChart: React.FC = () => {
                 dataGrouping: {
                     enabled: false // 禁用数据分组
                 }
-            }
-                , {
-                type: 'line',
-                name: '移动平均线-MA5',
-                data: maData5,
-                tooltip: {
-                    valueDecimals: 2
-                },
-                color: ma5Color
-            }
-                , {
-                type: 'line',
-                name: '移动平均线-MA10',
-                data: maData10,
-                tooltip: {
-                    valueDecimals: 2
-                },
-                color: ma10Color
-            }
-                , {
-                type: 'line',
-                name: '移动平均线-MA20',
-                data: maData20,
-                tooltip: {
-                    valueDecimals: 2
-                },
-                color: ma20Color
-            }
-                , {
-                type: 'line',
-                name: '移动平均线-MA120',
-                data: maData120,
-                tooltip: {
-                    valueDecimals: 2
-                },
-                color: ma120Color
-            }
-                , {
-                type: 'line',
-                name: '移动平均线-MA250',
-                data: maData250,
-                tooltip: {
-                    valueDecimals: 2
-                },
-                color: ma250Color
             }
                 , {
                 type: "column",
@@ -702,17 +600,56 @@ export const ThreeStockChart: React.FC = () => {
     const handleVoiceClick = () => {
         setOpenVoice(!openVoice)
     };
-    const handleModeChange = (e) => {
-        setViewMode(e.target.value)
-        if(e.target.value == 'one') {
-            let size = isMobile ? 24 : 20;
-            setSpanSize(size)
-        } else if (e.target.value == 'two') {
-            setSpanSize(10)
-        } else if (e.target.value == 'three') {
-            setSpanSize(8)
-        }
+    const handleReplyBackClick = () => {
+        setStep(step - stepSize)
+        replayFunction()
     };
+    const handleReplyClick = () => {
+        setStep(step + stepSize)
+        replayFunction()
+    };
+    const handleStepSizeClick = (value: number | null) => {
+        if (value != null) {
+            setStepSize(value)
+        }
+        
+    }
+
+    function compareDates(dateStr1: string, dateStr2: string): boolean {
+        const date1 = new Date(dateStr1);
+        const date2 = new Date(dateStr2);
+    
+        // 检查日期字符串是否有效
+        if (isNaN(date1.getTime()) || isNaN(date2.getTime())) {
+            throw new Error('Invalid date string provided');
+        }
+    
+        return date1.getTime() >= date2.getTime();
+    }
+    const replayFunction = () => {
+        let processArray:KItem[] = []
+        for(let i=0; i < leftKDatas.length && i <= step; i++) {
+            processArray.push(leftKDatas[i])
+        }
+        applyChart(processArray, leftPeriod, "left", true) 
+        if(processArray.length > 0) {
+            let lastDate = processArray[processArray.length - 1].date
+            let middleArray: KItem[] = []
+            let i = 0;
+            while(i<middleKDatas.length && compareDates(lastDate, middleKDatas[i].date)) {
+                middleArray.push(middleKDatas[i])
+                i++;
+            }
+            applyChart(middleArray, middlePeriod, "middle", true)
+        }
+       
+    }
+    const handleClearReply = () => {
+        setStep(0)
+        fetchKPrice(code, "left")
+        fetchKPrice(code, "middle")
+    }
+    
     const sound = new Howl({
         src: ['/tips.wav']
     });
@@ -723,21 +660,7 @@ export const ThreeStockChart: React.FC = () => {
     const handleMarkClick = () => {
         setMarkEnable(!markEnable)
     }
-    const LeftMACDValueChange = (value: number | null) => {
-        if (value != null) {
-            setLeftMacdValue(value)
-        }
-    };
-    const MiddleMACDValueChange = (value: number | null) => {
-        if (value != null) {
-            setMiddleMacdValue(value)
-        }
-    }
-    const RightMACDValueChange = (value: number | null) => {
-        if (value != null) {
-            setRightMacdValue(value)
-        }
-    }
+   
     const handleRefreshClick = () => {
         setUpdaterValue(updaterValue + 1)
     };
@@ -948,19 +871,10 @@ export const ThreeStockChart: React.FC = () => {
                 </>:<>
                     <Typography.Text className={styles.searchLabel}>股票代码</Typography.Text>
                     <Input.Search className={styles.searchInput} placeholder="输入代码" defaultValue={code} onSearch={handleCodeChange}></Input.Search>
-                    <Button type="text" onClick={handleMACDClick} style={macdStyle}>MA</Button>
-                    <Button type="text" onClick={handleLabelClick} style={labelStyle}>标签</Button>
-                    <Button type="text" onClick={handleBiClick} style={biStyle}>笔</Button>
-                    <Button type="text" onClick={handleCenterClick} style={centerStyle}>中枢</Button>
-                    <Button type="text" onClick={handleMarkClick} style={markStyle}>刻度</Button> 
-                    <Button type="text" onClick={handleBuySellClick} style={buysellStyle}>买卖点</Button>
-                    {/* <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button> */}
-                    <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50, marginRight: 20}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>
-                    <Radio.Group value={viewMode} onChange={handleModeChange}>
-                        <Radio value="one">单屏</Radio>
-                        <Radio value="two">双屏</Radio>
-                        <Radio value="three">三屏</Radio>
-                    </Radio.Group>
+                    <Button type="text" onClick={handleReplyClick} style={{color: refreshColor,marginLeft: 2, width: 50}}>重放+1</Button>
+                    <Button type="text" onClick={handleReplyBackClick} style={{color: refreshColor,marginLeft: 2, width: 50}}>重放-1</Button>
+                    <Button type="text" onClick={handleClearReply} style={{color: refreshColor,marginLeft: 2, width: 50}}>取消重放</Button>
+                    <InputNumber defaultValue={stepSize} min={0} max={100} onChange={handleStepSizeClick} style={{marginLeft: 8, width: 100}}></InputNumber>
                     <Typography.Text style={{marginLeft: 20, color: tipsColor}}>{tipsText}</Typography.Text>
                     <Button type="text" onClick={handleVoiceClick} style={{marginLeft: 12, color: '#FF0000', marginRight: 12}}>{openVoice ? '关提示音':'开提示音'}</Button>
                     
@@ -970,28 +884,7 @@ export const ThreeStockChart: React.FC = () => {
             
 
         </div> 
-        <div>
-            {
-                isMobile ? <>
-                    <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>涨幅 {dayPrice.rate}</Typography.Text> 
-                    <Button type="text" onClick={handleMACDClick} style={macdStyle}>MA</Button>
-                    <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50, marginRight: 12}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>
-                    <Button type="text" onClick={handleVoiceClick} style={{ color: '#FF0000'}}>{openVoice ? '关提示音':'开提示音'}</Button>
-                    <div>
-                        <Typography.Text style={{marginLeft: 20, color: tipsColor}}>{tipsText}</Typography.Text>
-                        
-                    </div>
-                </>:
-                <>
-                    <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>现价 {dayPrice.price}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: dayPrice.color}}>涨幅 {dayPrice.rate}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: capitalColor[0]}}>昨日净流入：{capital.todayStr}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: capitalColor[1]}}>3日净流入：{capital.threeDayStr}</Typography.Text>
-                    <Typography.Text style={{marginLeft: 12, color: capitalColor[2]}}>5日净流入：{capital.fiveDayStr}</Typography.Text>
-                </>
-            }
-        </div>
+        
         <Row className={styles.row} justify='center'>
             <Col span={spanSize} className={viewMode == 'one' ? styles.colNoborder : styles.col}>
                 {
@@ -1005,23 +898,9 @@ export const ThreeStockChart: React.FC = () => {
                             <Dropdown.Button menu={leftRangeMenuProps} onClick={handleLeftRangeMenuClick} className={styles.rangeMenu}>
                                 {leftRangeName}
                             </Dropdown.Button>
-                            <InputNumber defaultValue={leftMacdValue} min={0} max={5000} onChange={LeftMACDValueChange} style={{marginLeft: 0, width: 100}}></InputNumber>
                         </div>
                     </>
                 }
-                {
-                    isMobile && !macdEnable ? <></>:
-                    <>
-                    <div className={isMobile ? styles.maValueMobile : styles.maValue}>
-                        <Typography.Text style={{marginLeft: 12, color: ma5Color, fontSize: maFontSize}}>MA5 {leftMa5Value}</Typography.Text>
-                        <Typography.Text style={{marginLeft: 12, color: ma10Color, fontSize: maFontSize}}>MA10 {leftMa10Value}</Typography.Text>
-                        <Typography.Text style={{marginLeft: 12, color: ma20Color, fontSize: maFontSize}}>MA20 {leftMa20Value}</Typography.Text>
-                        <Typography.Text style={{marginLeft: 12, color: ma120Color, fontSize: maFontSize}}>MA120 {leftMa120Value}</Typography.Text>
-                        <Typography.Text style={{marginLeft: 12, color: ma250Color, fontSize: maFontSize}}>MA250 {leftMa250Value}</Typography.Text>
-                    </div>
-                    </>
-                } 
-                
                 <HighchartsReact
                     highcharts={Highcharts}
                     constructorType={'stockChart'}
@@ -1040,16 +919,8 @@ export const ThreeStockChart: React.FC = () => {
                             <Dropdown.Button menu={middleRangeMenuProps} onClick={handleMiddleRangeMenuClick} className={styles.rangeMenu}>
                                 {middleRangeName}
                             </Dropdown.Button>
-                            <InputNumber defaultValue={middleMacdValue} min={0} max={5000} onChange={MiddleMACDValueChange} style={{marginLeft: 0, width: 100}}></InputNumber>
 
                         </div> 
-                        <div className={styles.maValue}>
-                            <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {middleMa5Value}</Typography.Text>
-                            <Typography.Text style={{marginLeft: 12, color: ma10Color}}>MA10 {middleMa10Value}</Typography.Text>
-                            <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {middleMa20Value}</Typography.Text>
-                            <Typography.Text style={{marginLeft: 12, color: ma120Color}}>MA120 {middleMa120Value}</Typography.Text>
-                            <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {middleMa250Value}</Typography.Text>
-                        </div>
                         <HighchartsReact
                             highcharts={Highcharts}
                             constructorType={'stockChart'}
@@ -1058,34 +929,7 @@ export const ThreeStockChart: React.FC = () => {
                     </Col>
                 </>:<></>
             }
-            {
-                viewMode == 'three' ? <>
-                    <Col span={spanSize} className={styles.colNoborder}>
-                        <div className={styles.searchContent}>
-                            <Dropdown.Button menu={rightMenuProps} onClick={handleRightMenuClick} className={styles.searchMenu}>
-                                {rightPeriodName}
-                            </Dropdown.Button>
-                            <RangePicker showTime onChange={handleRightTimeChange} value={rightDateRange} format={"YYYY-MM-DD HH:mm:ss"}style={{marginRight: 4, marginLeft:4}}></RangePicker>
-                            <Dropdown.Button menu={rightRangeMenuProps} onClick={handleRightRangeMenuClick} className={styles.rangeMenu}>
-                                {rightRangeName}
-                            </Dropdown.Button>
-                            <InputNumber defaultValue={rightMacdValue} min={0} max={5000} onChange={RightMACDValueChange} style={{marginLeft: 0, width: 80}}></InputNumber>
-                        </div> 
-                        <div className={styles.maValue}>
-                            <Typography.Text style={{marginLeft: 12, color: ma5Color}}>MA5 {rightMa5Value}</Typography.Text>
-                            <Typography.Text style={{marginLeft: 12, color: ma10Color}}>MA10 {rightMa10Value}</Typography.Text>
-                            <Typography.Text style={{marginLeft: 12, color: ma20Color}}>MA20 {rightMa20Value}</Typography.Text>
-                            <Typography.Text style={{marginLeft: 12, color: ma120Color}}>MA120 {rightMa120Value}</Typography.Text>
-                            <Typography.Text style={{marginLeft: 12, color: ma250Color}}>MA250 {rightMa250Value}</Typography.Text>
-                        </div>
-                        <HighchartsReact
-                            highcharts={Highcharts}
-                            constructorType={'stockChart'}
-                            options={rightOptions}
-                        />
-                    </Col>
-                </>:<></>
-            }
+            
             
         </Row>
 

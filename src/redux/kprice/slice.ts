@@ -585,6 +585,7 @@ export function genBuySellPointV2(
             }
         }
         if(judgeLast) return result; //已经处理完了，不重复处理
+        if(lastKItem == undefined) return result;
         let aroundCenter = priceAroundCenter(lastCenter, lastKItem.close)
         if(lastPoint != undefined && lastPoint.type == 'top' && lastKItem.high < lastPoint.point) {
             //当作bottom处理

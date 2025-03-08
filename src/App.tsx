@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import logo from './logo.svg';
 import styles from "./App.module.css"
-import { HomePage, ListPage, FilterPage, BlockPage, ThreeChartPage, TestPage} from './pages';
+import { HomePage, ListPage, FilterPage, ThreeChartPage, TestPage, TestPage1} from './pages';
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { useAppDispatch, useSelector } from "./redux/hooks";
 import Papa from 'papaparse';
@@ -55,9 +55,9 @@ function App() {
         <Route path="/" element={<HomePage></HomePage>}></Route>
         <Route path="/listPage" element={<ListPage></ListPage>}></Route>
         <Route path="/filterPage" element={<FilterPage></FilterPage>}></Route>
-        <Route path="/blockPage" element={<BlockPage></BlockPage>}></Route>
         <Route path="/threeChartPage" element={<ThreeChartPage></ThreeChartPage>}></Route>
         <Route path="/testPage" element={<TestPage></TestPage>}></Route> 
+        <Route path="/testPage1" element={<TestPage1></TestPage1>}></Route> 
       </Routes>
       </BrowserRouter>
       

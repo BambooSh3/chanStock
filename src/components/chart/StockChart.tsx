@@ -371,6 +371,48 @@ export function genPeriodUrlKey(period: string) {
     }
     return ""
 }
+export function getNextPeriod(period: string) {
+        if(period == 'weekly') {
+            return 'daily'
+        } else if (period == 'daily') {
+            return '30'
+        } else if (period == '30') {
+            return '5'
+        } else if (period == '5') {
+            return '1'
+        } else if (period == '60') {
+            return '5'
+        }
+        return '5'
+}
+export function getRangeTime(period: string) {
+    const daystr = getCurrentDateFormatted(0,0)
+    const threeDaystr = getCurrentDateFormatted(7,0)
+    if(period == 'daily') {
+        const monthstr = getCurrentDateFormatted(90,0)
+        let startStr = monthstr + "090000"
+        let endStr = daystr + "200000" 
+        return [startStr, endStr]
+    } else if (period == '30') {
+        const monthstr = getCurrentDateFormatted(30,0)
+        let startStr = monthstr + "090000"
+        let endStr = daystr + "200000" 
+        return [startStr, endStr]
+    } else if (period == '5') {
+        const threeDaystr = getCurrentDateFormatted(7,0)
+        let startStr = threeDaystr + "090000"
+        let endStr = daystr + "200000"
+        return [startStr, endStr]
+    } else if (period == '1') {
+        const threeDaystr = getCurrentDateFormatted(1,0)
+        let startStr = threeDaystr + "090000"
+        let endStr = daystr + "200000" 
+        return [startStr, endStr]
+    }
+    let startStr = threeDaystr + "090000"
+    let endStr = daystr + "200000" 
+    return [startStr, endStr]
+}
 
 export function findRangeName(key) {
     let name = "选择日期"
