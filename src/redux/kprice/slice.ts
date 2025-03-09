@@ -484,6 +484,47 @@ function topTurningPoint(prePointIndex: number, pointIndex: number, dif: MAItem[
     } 
     return res;
 }
+export const showTips = (item: BuySellV2, period: string, itemArray: BuySellV2[]):boolean => {
+    if(itemArray.length == 0) return false
+    let tem = itemArray[itemArray.length - 1]
+    let temDateTime = new Date(tem.date).getTime()
+    let itemDateTime = subtractMinutesFromDate(item.date, period).getTime()
+    let sameType = item.type.startsWith('buy') && tem.type.startsWith('buy') || item.type.startsWith('sell') && tem.type.startsWith('sell')
+    if(sameType && temDateTime >= itemDateTime) {
+        return true
+    }
+    return false
+}
+
+function subtractMinutesFromDate(dateStr: string, period: string): Date {
+    // 将字符串日期转换为 Date 对象
+    const date = new Date(dateStr);
+
+    // 检查日期是否有效
+    if (isNaN(date.getTime())) {
+        throw new Error('Invalid date string');
+    }
+
+    // 计算要减去的毫秒数
+    let millisecondsToSubtract = 0;//min * 60 * 1000;
+    if(period == '1') {
+        millisecondsToSubtract = 1 * 60 * 1000;
+    } else if (period == '5') {
+        millisecondsToSubtract = 5 * 60 * 1000; 
+    } else if (period == '30') {
+        millisecondsToSubtract = 30 * 60 * 1000;
+    } else if (period == '15') {
+        millisecondsToSubtract = 15 * 60 * 1000;
+    } else if (period == '60') {
+        millisecondsToSubtract = 60 * 60 * 1000;
+    } else if (period == 'daily') {
+        millisecondsToSubtract = 60 * 60 * 1000 * 24;
+    }
+
+    // 减去指定的分钟数
+    const newDate = new Date(date.getTime() - millisecondsToSubtract);
+    return newDate;
+}
 
 export function genBuySellPointV2(
     bi: ChanPointItem[], 

@@ -52,10 +52,9 @@ function App() {
     <div className={styles.App}>
       <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage></HomePage>}></Route>
+        <Route path="/" element={<ThreeChartPage></ThreeChartPage>}></Route>
         <Route path="/listPage" element={<ListPage></ListPage>}></Route>
         <Route path="/filterPage" element={<FilterPage></FilterPage>}></Route>
-        <Route path="/threeChartPage" element={<ThreeChartPage></ThreeChartPage>}></Route>
         <Route path="/testPage" element={<TestPage></TestPage>}></Route> 
       </Routes>
       </BrowserRouter>

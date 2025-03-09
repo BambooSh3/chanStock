@@ -8,7 +8,7 @@ import Typography from "antd/es/typography"
 import React, { useEffect, useRef, useState } from "react"
 import { findRangeName, genPeriodUrlKey, getCurrentDateFormatted,
      getNextPeriod,
-     getPeriodName, getRangeTime, parseBuySellPointLabel, parseBuySellPointLabelV2, parseChanBi, parseChanBiLabel, parseChanCenter,
+     getPeriodName, getRangeTime, parseBuySellLines, parseBuySellPointLabel, parseBuySellPointLabelV2, parseChanBi, parseChanBiLabel, parseChanCenter,
       parseData, parseMACD, parseMaData, parseMarkLine, parseVolData, periodList, rangeList } from "../chart/StockChart"
 import styles from "./ThreeStockChart.module.css"
 import { useSelector } from "../../redux/hooks";
@@ -35,7 +35,6 @@ export const ThreeStockChart: React.FC = () => {
     const [centerEnable,setCenterEnable] = useState<boolean>(true)
     const [buySellEnable, setBuySellEnable] = useState<boolean>(true)
     const [labelEnable, setLabelEnable] = useState<boolean>(false)
-    const [markEnable, setMarkEnable] = useState<boolean>(false)
     const [macdEnable,setMacdEnable] = useState<boolean>(false)
     const [leftMacdValue, setLeftMacdValue] = useState<number>(0)
     const [middleMacdValue, setMiddleMacdValue] = useState<number>(0)
@@ -52,7 +51,6 @@ export const ThreeStockChart: React.FC = () => {
     const centerStyle = centerEnable ? {color: "#FF6A6A"} : {color: "gray"};
     const labelStyle = labelEnable ? {color:"#FF6A6A"} : {color:"gray"};
     const macdStyle = macdEnable ? {color:"#FF6A6A"} : {color:"gray"};
-    const markStyle = markEnable ? {color:"#FF6A6A"} : {color:"gray"}; 
     const buysellStyle = buySellEnable ? {color:"#FF6A6A"} : {color:"gray"}; 
     const maFontSize = isMobile? "10px" : "14px"
     let refreshColor = updaterTimerFlag ? "#FF0000" : "#1E90FF";
@@ -143,6 +141,8 @@ export const ThreeStockChart: React.FC = () => {
     }
     const [viewMode, setViewMode] = useState<"one"|"two"|"three">(defaultMode)
     const [spanSize, setSpanSize] = useState<number>(defaultSize)
+    const [leftMarkArray, setLeftMarkArray] = useState<string[]>([])
+    const [middleMarkArray, setMiddleMarkArray] = useState<string[]>([])
 
     useEffect(() => {
         setChartHeight(chartStr)
@@ -187,6 +187,10 @@ export const ThreeStockChart: React.FC = () => {
                 }
                 
                 let text = "买卖建议：" + leftPeriodName + leftItem.date + ':' + leftItem.type + ':' + leftItem.price
+                let markItem = leftItem.date + '[' + buyType + ']'
+                if(!leftMarkArray.includes(markItem)){
+                    leftMarkArray.push(markItem)
+                }
                 setTipsText(text)
                 if(openVoice) {
                     sound.play()
@@ -205,6 +209,10 @@ export const ThreeStockChart: React.FC = () => {
                     buyType = "sell"
                 }
                 let text = "买卖建议：" + middlePeriodName + middleItem.date + ':' + middleItem.type + ":" + middleItem.price
+                let markItem = middleItem.date + '[' + buyType + ']'
+                if(!middleMarkArray.includes(markItem)){
+                    middleMarkArray.push(markItem)
+                }
                 setTipsText(text)
                 if(openVoice) {
                     sound.play()
@@ -219,7 +227,7 @@ export const ThreeStockChart: React.FC = () => {
         checkTips()
     }, [updaterTimer, updaterValue, 
         code, macdEnable, biEnable, 
-        centerEnable, labelEnable, markEnable, buySellEnable ]);
+        centerEnable, labelEnable, buySellEnable ]);
 
 
     const fetchLeftData = () => {
@@ -373,7 +381,13 @@ export const ThreeStockChart: React.FC = () => {
         }
         const chanBi = biEnable ? parseChanBi(bi) : [];
         const centerShapes =centerEnable ? parseChanCenter(center) : [];
-        const markValues = parseMarkLine(markEnable);
+        let markValues = parseBuySellLines(false, [])
+        if(mode == "left") {
+            markValues = parseBuySellLines(buySellEnable, leftMarkArray);
+        } else if (mode == "middle") {
+            markValues = parseBuySellLines(buySellEnable, middleMarkArray)
+        }
+        
         let labels =labelEnable ? parseChanBiLabel(bi) : [];
         const buyselllabels = buySellItems.length>0 ? parseBuySellPointLabelV2(buySellItems):[];
         labels = labels.concat(buyselllabels)
@@ -665,6 +679,11 @@ export const ThreeStockChart: React.FC = () => {
         setBuySellEnable(!buySellEnable)
     }
     const handleVoiceClick = () => {
+        if(openVoice == false) {
+            //开启声音，进行一次声音测试
+            sound.play()
+            alert('声音测试，如果听不到声音，请检查是否静音')
+        }
         setOpenVoice(!openVoice)
     };
     const handleModeChange = (e) => {
@@ -685,9 +704,6 @@ export const ThreeStockChart: React.FC = () => {
         src: ['/weaktips.wav']
     })
     
-    const handleMarkClick = () => {
-        setMarkEnable(!markEnable)
-    }
     const LeftMACDValueChange = (value: number | null) => {
         if (value != null) {
             setLeftMacdValue(value)
@@ -917,7 +933,6 @@ export const ThreeStockChart: React.FC = () => {
                     <Button type="text" onClick={handleLabelClick} style={labelStyle}>标签</Button>
                     <Button type="text" onClick={handleBiClick} style={biStyle}>笔</Button>
                     <Button type="text" onClick={handleCenterClick} style={centerStyle}>中枢</Button>
-                    <Button type="text" onClick={handleMarkClick} style={markStyle}>刻度</Button> 
                     <Button type="text" onClick={handleBuySellClick} style={buysellStyle}>买卖点</Button>
                     {/* <Button type="text" onClick={handleRefreshClick} style={{color: "#1E90FF", width:30, marginLeft: 12}}>刷新</Button> */}
                     <Button type="text" onClick={handleRefreshTimerClick} style={{color: refreshColor,marginLeft: 12, width: 50, marginRight: 20}}>{updaterTimerFlag ? "停止刷新": "定时刷新"}</Button>

@@ -15,9 +15,7 @@ export const Header: React.FC<Props> = (prop) => {
     function navListPage() {
         navigate("/listPage")
     }
-    function navHomePage() {
-        navigate('/')
-    }
+    
     function navFilterPage() {
         navigate('/filterPage')
     }
@@ -25,7 +23,7 @@ export const Header: React.FC<Props> = (prop) => {
     //     navigate('/blockPage')
     // }
     function navThreePage() {
-        navigate('/threeChartPage')
+        navigate('/')
     }
     
     function navTestPage() {
