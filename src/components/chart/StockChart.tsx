@@ -468,7 +468,7 @@ export function findRangeName(key) {
     return name
 }
 
-export function getCurrentDateFormatted(before, style): string {
+export function getCurrentDateFormatted_1(before, style): string {
     const now = new Date();
     while (isWeekend(now)) {
         now.setDate(now.getDate() - 1);
@@ -478,6 +478,26 @@ export function getCurrentDateFormatted(before, style): string {
     const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份从0开始计数，需加1，且保证两位数格式
     const day = String(now.getDate()).padStart(2, '0');
     if (style == 0) {
+        return `${year}${month}${day}`;
+    } else {
+        return `${year}-${month}-${day}`;
+    }
+}
+
+export function getCurrentDateFormatted(before, style) {
+    const now = new Date();
+    let count = 0;
+    while (count < before) {
+        now.setDate(now.getDate() - 1);
+        const dayOfWeek = now.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            count++;
+        }
+    }
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    if (style === 0) {
         return `${year}${month}${day}`;
     } else {
         return `${year}-${month}-${day}`;

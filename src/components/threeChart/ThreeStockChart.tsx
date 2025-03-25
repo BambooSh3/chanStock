@@ -28,7 +28,9 @@ Annotations(Highcharts);
 
 const { RangePicker } = DatePicker;
 
-export const ThreeStockChart: React.FC = () => {
+
+
+export const ThreeStockChart: React.FC = (props) => {
     const [code, setCode] = useState<string>("000688") 
     const codeDic = useSelector((state) => state.periodChange.codeNameDic);
     const [biEnable,setBiEnable] = useState<boolean>(true) 
@@ -54,18 +56,18 @@ export const ThreeStockChart: React.FC = () => {
     const buysellStyle = buySellEnable ? {color:"#FF6A6A"} : {color:"gray"}; 
     const maFontSize = isMobile? "10px" : "14px"
     let refreshColor = updaterTimerFlag ? "#FF0000" : "#1E90FF";
-    const [leftRangeName, setLeftRangeName] = useState<string>("一个月");
-    const [middleRangeName, setMiddleRangeName] = useState<string>("七天");
-    const [rightRangeName, setRightRangeName] = useState<string>("一天");
+    const [leftRangeName, setLeftRangeName] = useState<string>("六个月");
+    const [middleRangeName, setMiddleRangeName] = useState<string>("一个月");
+    const [rightRangeName, setRightRangeName] = useState<string>("三天");
     //左边按一个月算，中间3天，右边一天算时间
     const daystr = getCurrentDateFormatted(0,0)
-    const monthstr = getCurrentDateFormatted(30,0)
+    const monthstr = getCurrentDateFormatted(30*6,0)
     let leftStartStr = monthstr + "090000"
     let leftEndStr = daystr + "200000"
-    const threeDaystr = getCurrentDateFormatted(7,0)
+    const threeDaystr = getCurrentDateFormatted(30,0)
     let middleStartStr = threeDaystr + "090000"
     let middleEndStr = daystr + "200000"
-    const oneDaystr = getCurrentDateFormatted(1,0)
+    const oneDaystr = getCurrentDateFormatted(3,0)
     let rightStartStr = oneDaystr + "090000"
     let rightEndStr = daystr + "200000"
 
@@ -79,12 +81,12 @@ export const ThreeStockChart: React.FC = () => {
     const [middleEndTime,setMiddleEndTime] = useState<string>(middleEndStr)
     const [rightEndTime, setRightEndTime] = useState<string>(rightEndStr)
     const dateFormat = 'YYYYMMDDHHmmss';
-    const [leftPeriod, setLeftPeriod] = useState<string>("30")
-    const [middlePeriod, setMiddlePeriod] = useState<string>("5")
-    const [rightPeriod, setRightPeriod] = useState<string>("1")
-    const [leftPeriodName, setLeftPeriodName] = useState<string>("30分钟线")
-    const [middlePeriodName, setMiddlePeriodName] = useState<string>("5分钟线")
-    const [rightPeriodName, setRightPeriodName] = useState<string>("1分钟线")
+    const [leftPeriod, setLeftPeriod] = useState<string>("daily")
+    const [middlePeriod, setMiddlePeriod] = useState<string>("30")
+    const [rightPeriod, setRightPeriod] = useState<string>("5")
+    const [leftPeriodName, setLeftPeriodName] = useState<string>("日线")
+    const [middlePeriodName, setMiddlePeriodName] = useState<string>("30分钟线")
+    const [rightPeriodName, setRightPeriodName] = useState<string>("5分钟线")
     const dispatch = useDispatch();
     const ma5Color = "#FAD700"
     const ma10Color = "#40E0CD"
@@ -123,30 +125,35 @@ export const ThreeStockChart: React.FC = () => {
     const [capital, setCapital] = useState<CapitalItem>({today: 0, threeDay: 0, fiveDay: 0, todayStr: '-', threeDayStr: '-', fiveDayStr: '-'})
     const [capitalColor, setCapitalColor] = useState<[string, string, string]>(['#FF0000','#FF0000','FF0000'])
     const [dayPrice, setDayPrice] = useState<DayPriceItem>({price: 0, rate: '0%', color: '#FF0000'})
-
-    const leftHeight: number = isMobile ? window.innerHeight - 150 : window.innerHeight - 230; 
-    const chartStr = `${leftHeight}px`
-    const [chartHeight, setChartHeight] = useState<string>(chartStr)
+    const [chartHeight, setChartHeight] = useState<string>(`${window.innerHeight - 230}px`)
     const [tipsText, setTipsText] = useState<string>("暂无买卖建议")
     const [tipsColor, setTipsColor] = useState<string>("#FF0000")
     const [openVoice, setOpenVoice] = useState<boolean>(false)
-    let defaultMode:"one"|"two"|"three" = "three"
-    let defaultSize = 8
-    if (isMobile) {
-        defaultMode = "one"
-        defaultSize = 24
-    } else if (isSmallPC) {
-        defaultMode = "two"
-        defaultSize = 10
-    }
-    const [viewMode, setViewMode] = useState<"one"|"two"|"three">(defaultMode)
-    const [spanSize, setSpanSize] = useState<number>(defaultSize)
+    
+    const [viewMode, setViewMode] = useState<"one"|"two"|"three">("three")
+    const [spanSize, setSpanSize] = useState<number>(8)
     const [leftMarkArray, setLeftMarkArray] = useState<string[]>([])
     const [middleMarkArray, setMiddleMarkArray] = useState<string[]>([])
 
     useEffect(() => {
-        setChartHeight(chartStr)
+        // 设置一个 3000 毫秒（即 3 秒）的延迟
+        const leftHeight: number = isMobile ? window.innerHeight - 150 : window.innerHeight - 230; 
+        const chartStr = `${leftHeight}px`
+        setChartHeight(chartStr)  
     }, []);
+    useEffect(() => {
+        if(isMobile) {
+            setViewMode("one")
+            setSpanSize(24)
+        } else if (isSmallPC) {
+            setViewMode("two")
+            setSpanSize(10)
+        } else {
+            setViewMode("three")
+            setSpanSize(8)
+        }
+    }, [isMobile, isSmallPC]);
+    
     const fetchAllData = () => {
         if(viewMode == "three") {
             fetchKPrice(code, "left")
@@ -399,8 +406,8 @@ export const ThreeStockChart: React.FC = () => {
         } else {
             periodtitle = periodtitle + '分钟'
         }
-        const codeName = codeDic[code] != null ? `${codeDic[code]}--${periodtitle}走势图` : `${code}--${periodtitle}走势图`
-        document.title = codeDic[code] != null ? `${codeDic[code]}走势图` : `${code}走势图` 
+        const codeName = codeDic[code] != null ? `${codeDic[code]}--${periodtitle}` : `${code}--${periodtitle}`
+        document.title = codeDic[code] != null ? `${codeDic[code]}[${dayPrice.price}] [${dayPrice.rate}]` : `${code}[${dayPrice.price}] [${dayPrice.rate}]` 
         const options = genChartDatas(chartHeight,codeName,macdValue,
             trueData, maData5, ma5Color, maData10,ma10Color,
             maData20,ma20Color,maData120,ma120Color,maData250,ma250Color,
